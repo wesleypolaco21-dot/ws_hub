@@ -1,8 +1,12 @@
+-- ╔══════════════════════════════════════╗
+-- ║         WS HUB  •  v1.4             ║
+-- ║         @o_escolhido                ║
+-- ╚══════════════════════════════════════╝
 if not game:IsLoaded() then game.Loaded:Wait() end
 pcall(function() game:GetService("Players").RespawnTime = 0 end)
 pcall(function() if setfpscap then setfpscap(9999) end end)
 
-SharedState = {
+local SharedState = {
     ConveyorAnimals = {},
     BestConveyorGv = -1,
     SelectedPetData = nil,
@@ -21,11 +25,11 @@ do
     local Sync = require(game.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Synchronizer"))
 
     for name, fn in pairs(Sync) do
-        if typeof(fn) ~= "function" then end
-        if isexecutorclosure(fn) then end
+        if typeof(fn) ~= "function" then continue end
+        if isexecutorclosure(fn) then continue end
 
         local ok, ups = pcall(debug.getupvalues, fn)
-        if not ok then end
+        if not ok then continue end
 
         for idx, val in pairs(ups) do
             if typeof(val) == "function" and not isexecutorclosure(val) then
@@ -47,7 +51,7 @@ do
     end
 end
 
-Services = {
+local Services = {
     Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
     UserInputService = game:GetService("UserInputService"),
@@ -60,20 +64,21 @@ Services = {
     GuiService = game:GetService("GuiService"),
     TeleportService = game:GetService("TeleportService"),
 }
-Players = Services.Players
-RunService = Services.RunService
-UserInputService = Services.UserInputService
-ReplicatedStorage = Services.ReplicatedStorage
-TweenService = Services.TweenService
-HttpService = Services.HttpService
-Workspace = Services.Workspace
-Lighting = Services.Lighting
-VirtualInputManager = Services.VirtualInputManager
-GuiService = Services.GuiService
-TeleportService = Services.TeleportService
-LocalPlayer = Players.LocalPlayer
-PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Players = Services.Players
+local RunService = Services.RunService
+local UserInputService = Services.UserInputService
+local ReplicatedStorage = Services.ReplicatedStorage
+local TweenService = Services.TweenService
+local HttpService = Services.HttpService
+local Workspace = Services.Workspace
+local Lighting = Services.Lighting
+local VirtualInputManager = Services.VirtualInputManager
+local GuiService = Services.GuiService
+local TeleportService = Services.TeleportService
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+local Decrypted
 Decrypted = setmetatable({}, {
     __index = function(S, ez)
         local Netty = ReplicatedStorage.Packages.Net
@@ -92,11 +97,11 @@ Decrypted = setmetatable({}, {
         return rawget(Decrypted, ez)
     end
 })
-Utility = {}
+local Utility = {}
 function Utility:LarpNet(F) return Decrypted[F] end
 
 -- Safe conversion for configurable keybind strings.
-function safeKeyCode(name, fallback)
+local function safeKeyCode(name, fallback)
     if type(name) ~= "string" then return fallback end
     local cleaned = name:gsub("^%s+", ""):gsub("%s+$", "")
     if cleaned == "" or cleaned == "--" then return fallback end
@@ -105,8 +110,8 @@ function safeKeyCode(name, fallback)
     return fallback
 end
 
-FileName = "BullysRemastered_v1.json" 
-DefaultConfig = {
+local FileName = "BullysRemastered_v1.json" 
+local DefaultConfig = {
     Positions = {
         AdminPanel = {X = 0.1859375, Y = 0.5767123526556385}, 
         AdminToolsPanel = {X = 0.02, Y = 0.25},
@@ -203,10 +208,11 @@ DefaultConfig = {
     HideStatusHUD = false,
     HideInvisPanel = false,
     RaknetDesyncEnabled = false,
+    DesyncMode = "auto",
 }
 
 
-Config = DefaultConfig
+local Config = DefaultConfig
 
 if isfile and isfile(FileName) then
     pcall(function()
@@ -235,8 +241,7 @@ if Config.CurrentTheme and THEMES and THEMES[Config.CurrentTheme] then
     for k, v in pairs(THEMES[Config.CurrentTheme]) do Theme[k] = v end
 end
 
-function SaveConfig()
-    ShowNotification("CONFIG", "Configurações salvas!")
+local function SaveConfig()
     if writefile then
         pcall(function()
             local toSave = {}
@@ -262,28 +267,28 @@ end
 _G.invisibleStealEnabled = false
 _G.RecoveryInProgress = false
 
-function getControls()
+local function getControls()
 	local playerScripts = LocalPlayer:WaitForChild("PlayerScripts")
 	local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
 	return playerModule:GetControls()
 end
 
-Controls = getControls()
+local Controls = getControls()
 
-function kickPlayer()
+local function kickPlayer()
     local ok = pcall(function()
         if game.Shutdown then
             game:Shutdown()
         else
-            LocalPlayer:Kick("\nNOTZ HUB PRIVATE")
+            LocalPlayer:Kick("\nWS")
         end
     end)
     if not ok then
-        pcall(function() LocalPlayer:Kick("\nNOTZ HUB PRIVATE") end)
+        pcall(function() LocalPlayer:Kick("\nWS") end)
     end
 end
 
-function walkForward(seconds)
+local function walkForward(seconds)
     local char = LocalPlayer.Character
     local hum = char:FindFirstChild("Humanoid")
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -304,8 +309,7 @@ function walkForward(seconds)
 end
 
 
-function instantClone()
-    ShowNotification("CLONE", "Iniciando clonagem...")
+local function instantClone()
     if _G.isCloning then return end
     _G.isCloning = true
 
@@ -362,7 +366,7 @@ function instantClone()
     _G.isCloning = false
 end
 
-function triggerClosestUnlock(yLevel, maxY)
+local function triggerClosestUnlock(yLevel, maxY)
     local character = LocalPlayer.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -417,31 +421,31 @@ function triggerClosestUnlock(yLevel, maxY)
     end
 end
 
-Theme = {
-    Background      = Color3.fromRGB(0, 0, 0),
-    Surface         = Color3.fromRGB(20, 20, 20),
-    SurfaceHighlight= Color3.fromRGB(40, 40, 40),
-    Accent1         = Color3.fromRGB(100, 100, 100),
-    Accent2         = Color3.fromRGB(60, 60, 60),
-    TextPrimary     = Color3.fromRGB(240, 220, 220),
-    TextSecondary   = Color3.fromRGB(200, 160, 160),
-    Success         = Color3.fromRGB(220, 50, 50),
-    Error           = Color3.fromRGB(255, 80, 80),
+local Theme = {
+    Background      = Color3.fromRGB(15, 15, 15),
+    Surface         = Color3.fromRGB(25, 25, 25),
+    SurfaceHighlight= Color3.fromRGB(45, 45, 45),
+    Accent1         = Color3.fromRGB(140, 140, 140),
+    Accent2         = Color3.fromRGB(90, 90, 90),
+    TextPrimary     = Color3.fromRGB(220, 220, 220),
+    TextSecondary   = Color3.fromRGB(160, 160, 160),
+    Success         = Color3.fromRGB(140, 140, 140),
+    Error           = Color3.fromRGB(180, 180, 180),
 }
 
 THEMES = {
     preto = {
-        Background       = Color3.fromRGB(12, 5, 5),
-        Surface          = Color3.fromRGB(25, 8, 8),
-        SurfaceHighlight = Color3.fromRGB(45, 15, 15),
-        Accent1          = Color3.fromRGB(220, 50, 50),
-        Accent2          = Color3.fromRGB(160, 30, 30),
-        TextPrimary      = Color3.fromRGB(240, 220, 220),
-        TextSecondary    = Color3.fromRGB(200, 160, 160),
-        Success          = Color3.fromRGB(220, 50, 50),
-        Error            = Color3.fromRGB(255, 80, 80),
-        GlowColor1       = Color3.fromRGB(220, 50, 50),
-        GlowColor2       = Color3.fromRGB(160, 30, 30),
+        Background       = Color3.fromRGB(15, 15, 15),
+        Surface          = Color3.fromRGB(25, 25, 25),
+        SurfaceHighlight = Color3.fromRGB(45, 45, 45),
+        Accent1          = Color3.fromRGB(140, 140, 140),
+        Accent2          = Color3.fromRGB(90, 90, 90),
+        TextPrimary      = Color3.fromRGB(220, 220, 220),
+        TextSecondary    = Color3.fromRGB(160, 160, 160),
+        Success          = Color3.fromRGB(140, 140, 140),
+        Error            = Color3.fromRGB(180, 180, 180),
+        GlowColor1       = Color3.fromRGB(140, 140, 140),
+        GlowColor2       = Color3.fromRGB(90, 90, 90),
     },
 }
 
@@ -589,7 +593,7 @@ function applyTheme(themeName)
     end)
 
     if ShowNotification then
-    ShowNotification("TEMA", "Tema " .. themeName .. " aplicado!")
+    ShowNotification("tema", themeName)
 end
 end
 
@@ -634,7 +638,7 @@ function addRacetrackBorder(parentFrame, speed)
     return stroke
 end
 
-PRIORITY_LIST = {
+local PRIORITY_LIST = {
   "Headless Horseman","Strawberry Elephant","Meowl","Signore Carapace","Skibidi Toilet","Griffin","Love Love Bear","Dragon Gingerini","Elefanto Frigo","Ginger Gerat","La Supreme Combinasion","Antonio","Dragon Cannelloni","Hydra Dragon Cannelloni","Dug dug dug","Ketupat Bros","Tirilikalika Tirilikalako","La Casa Boo","Los Amigos","Cerberus","Celestial Pegasus","Cooki and Milki","Rosey and Teddy","Reinito Sleighito","Capitano Moby","Spooky and Pumpky","Fragrama and Chocrama","Garama and Madundung","La Food Combinasion","Burguro and Fryuro","Popcuru and Fizzuru","Ketchuru and Musturu","La Secret Combinasion","Tralaledon","Tictac Sahur","Ketupat Kepat","Tang Tang Keletang","Orcaledon","La Ginger Sekolah","Los Spaghettis","Lavadorito Spinito","Swaggy Bros","La Taco Combinasion","Los Primos","Chillin Chili","Tuff Toucan","W or L","Chillin Chili","Chipso and Queso","Fishino Clownino"
 }
 
@@ -645,13 +649,13 @@ do
     end
 end
 
-function savePriorityToConfig()
+local function savePriorityToConfig()
     Config.PriorityList = {}
     for i, v in ipairs(PRIORITY_LIST) do Config.PriorityList[i] = v end
     SaveConfig()
 end
 
-function findAdorneeGlobal(animalData)
+local function findAdorneeGlobal(animalData)
     if not animalData then return nil end
     local plot = Workspace:FindFirstChild("Plots") and Workspace.Plots:FindFirstChild(animalData.plot)
     if plot then
@@ -671,7 +675,7 @@ function findAdorneeGlobal(animalData)
     return nil
 end
 
-function CreateGradient(parent)
+local function CreateGradient(parent)
     local g = Instance.new("UIGradient", parent)
     g.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0, Theme.Accent2),
@@ -681,7 +685,7 @@ function CreateGradient(parent)
     return g
 end
 
-function MakeDraggable(handle, target, saveKey)
+local function MakeDraggable(handle, target, saveKey)
     local dragging, dragInput, dragStart, startPos
 
     handle.InputBegan:Connect(function(input)
@@ -724,7 +728,7 @@ function MakeDraggable(handle, target, saveKey)
     end)
 end
 
-DANGER_TOOLS = {
+local DANGER_TOOLS = {
     ["Boogie Bomb"] = true,
     ["Medusa's Head"] = true,
     ["Body Swap Potion"] = true,
@@ -732,11 +736,11 @@ DANGER_TOOLS = {
     ["Rainbowrath Sword"] = true,
     ["Gummy Bear"] = true,
 }
-function isMobileDevice()
+local function isMobileDevice()
     return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
 end
-IS_MOBILE = isMobileDevice()
-function ApplyViewportUIScaleAdmin(targetFrame, _, _, minScale, maxScale)
+local IS_MOBILE = isMobileDevice()
+local function ApplyViewportUIScaleAdmin(targetFrame, _, _, minScale, maxScale)
     if not targetFrame or not IS_MOBILE then return end
     local existing = targetFrame:FindFirstChildOfClass("UIScale")
     if existing then existing:Destroy() end
@@ -744,7 +748,7 @@ function ApplyViewportUIScaleAdmin(targetFrame, _, _, minScale, maxScale)
     sc.Parent = targetFrame
     sc.Scale = math.clamp(0.65, minScale or 0.45, maxScale or 0.85)
 end
-function AddMobileMinimizeAdmin(frame, labelText)
+local function AddMobileMinimizeAdmin(frame, labelText)
     if not IS_MOBILE or not frame then return end
     local header = frame:FindFirstChildWhichIsA("Frame")
     if not header then return end
@@ -783,72 +787,20 @@ function AddMobileMinimizeAdmin(frame, labelText)
     end)
 end
 
-local function ShowNotification(title, text)
-    pcall(function()
-        local BullysNotif = PlayerGui:FindFirstChild("BullysNotif")
-        if not BullysNotif then
-            BullysNotif = Instance.new("ScreenGui", PlayerGui)
-            BullysNotif.Name = "BullysNotif"
-        end
-        local container = BullysNotif:FindFirstChild("NotifContainer")
-        if not container then
-            container = Instance.new("Frame", BullysNotif)
-            container.Name = "NotifContainer"
-            container.Size = UDim2.new(0, 300, 1, 0)
-            container.Position = UDim2.new(1, -310, 0, 0)
-            container.BackgroundTransparency = 1
-            local layout = Instance.new("UIListLayout", container)
-            layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-            layout.Padding = UDim.new(0, 10)
-        end
-        local notif = Instance.new("Frame", container)
-        notif.Size = UDim2.new(1, 0, 0, 60)
-        notif.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        notif.BackgroundTransparency = 0.1
-        Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 8)
-        local stroke = Instance.new("UIStroke", notif)
-        stroke.Color = Color3.fromRGB(100, 100, 100)
-        stroke.Thickness = 1.5
-        local tLabel = Instance.new("TextLabel", notif)
-        tLabel.Size = UDim2.new(1, -20, 0, 20)
-        tLabel.Position = UDim2.new(0, 10, 0, 5)
-        tLabel.Text = title:upper()
-        tLabel.Font = Enum.Font.GothamBlack
-        tLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-        tLabel.TextSize = 14
-        tLabel.BackgroundTransparency = 1
-        local mLabel = Instance.new("TextLabel", notif)
-        mLabel.Size = UDim2.new(1, -20, 0, 30)
-        mLabel.Position = UDim2.new(0, 10, 0, 25)
-        mLabel.Text = text
-        mLabel.Font = Enum.Font.GothamMedium
-        mLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        mLabel.TextSize = 12
-        mLabel.BackgroundTransparency = 1
-        mLabel.TextWrapped = true
-        task.delay(5, function()
-            local tween = game:GetService("TweenService"):Create(notif, TweenInfo.new(0.5), {BackgroundTransparency = 1})
-            game:GetService("TweenService"):Create(stroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
-            game:GetService("TweenService"):Create(tLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-            game:GetService("TweenService"):Create(mLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-            tween:Play()
-            tween.Completed:Connect(function() notif:Destroy() end)
-        end)
-    end)
-end
+local function ShowNotification(title, text, duration) end
 
-function isPlayerCharacter(model)
+local function isPlayerCharacter(model)
     return Players:GetPlayerFromCharacter(model) ~= nil
 end
 
-function handleAnimator(animator)
+local function handleAnimator(animator)
     local model = animator:FindFirstAncestorOfClass("Model")
     if model and isPlayerCharacter(model) then return end
     for _, track in pairs(animator:GetPlayingAnimationTracks()) do track:Stop(0) end
     animator.AnimationPlayed:Connect(function(track) track:Stop(0) end)
 end
 
-function stripVisuals(obj)
+local function stripVisuals(obj)
     local model = obj:FindFirstAncestorOfClass("Model")
     local isPlayer = model and isPlayerCharacter(model)
 
@@ -885,7 +837,7 @@ function stripVisuals(obj)
     end
 end
 
-fpsBoostState = {
+local fpsBoostState = {
     enabled = false,
     original = nil,
     effectStates = {},
@@ -893,7 +845,7 @@ fpsBoostState = {
     descendantConn = nil,
 }
 
-function setFPSBoost(enabled)
+local function setFPSBoost(enabled)
     Config.FPSBoost = enabled
     SaveConfig()
     if enabled then
@@ -987,7 +939,7 @@ function setFPSBoost(enabled)
             end
         end
 if Config.FPSBoost then task.spawn(function() task.wait(1); setFPSBoost(true) end) end
-State = {
+local State = {
     ProximityAPActive = false,
     carpetSpeedEnabled = false,
     infiniteJumpEnabled = Config.TpSettings.InfiniteJump,
@@ -996,7 +948,7 @@ State = {
     isTpMoving = false,
     manualTargetEnabled = false,
 }
-Connections = {
+local Connections = {
     carpetSpeedConnection = nil,
     infiniteJumpConnection = nil,
     _ijInputBegan = nil,
@@ -1005,15 +957,15 @@ Connections = {
     antiRagdollConn = nil,
     antiRagdollV2Task = nil,
 }
-UI = {
+local UI = {
     carpetStatusLabel = nil,
     settingsGui = nil,
 }
-carpetSpeedEnabled = State.carpetSpeedEnabled
-carpetSpeedConnection = Connections.carpetSpeedConnection
-_carpetStatusLabel = UI.carpetStatusLabel
+local carpetSpeedEnabled = State.carpetSpeedEnabled
+local carpetSpeedConnection = Connections.carpetSpeedConnection
+local _carpetStatusLabel = UI.carpetStatusLabel
 
-function setCarpetSpeed(enabled)
+local function setCarpetSpeed(enabled)
     State.carpetSpeedEnabled = enabled
     carpetSpeedEnabled = State.carpetSpeedEnabled
     if Connections.carpetSpeedConnection then Connections.carpetSpeedConnection:Disconnect(); Connections.carpetSpeedConnection = nil end
@@ -2040,7 +1992,7 @@ task.spawn(function()
                             if pp then
                                 local nameL = d.Name:lower()
                                 if nameL:find("podium", 1, true) or nameL:find("base", 1, true) or nameL:find("plotsign", 1, true) then
-                                    -- continue
+                                    continue
                                 end
                                 local score = 0
                                 if nameL == petNameNorm then
@@ -2592,6 +2544,9 @@ task.spawn(function()
         local ct = allPets and allPets[selectedTargetIndex]
         local prevUID = SharedState.SelectedPetData and SharedState.SelectedPetData.uid
         SharedState.SelectedPetData = ct
+        if ct and ct.uid ~= prevUID then
+            ShowNotification("alvo", (ct.petName or ct.name or "?") .. "  ·  " .. (ct.owner or "?"))
+        end
         local newUID = ct and ct.uid
         if Config.AutoBack and _G.startAutoBack and _G.stopAutoBack and newUID ~= prevUID then
             pcall(function()
@@ -2624,6 +2579,7 @@ task.spawn(function()
         autoStealEnabled = true
         SharedState.ListNeedsRedraw = false
         updateUI(true, get_all_pets())
+        ShowNotification("auto steal", "ativado")
     end)
     
     nearestBtn.MouseButton1Click:Connect(function()
@@ -2632,6 +2588,7 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
+        ShowNotification("modo", "nearest")
     end)
 
     highestBtn.MouseButton1Click:Connect(function()
@@ -2640,6 +2597,7 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
+        ShowNotification("modo", "highest")
     end)
 
     priorityBtn.MouseButton1Click:Connect(function()
@@ -2648,6 +2606,7 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
+        ShowNotification("modo", "priority")
     end)
 
     -- Expose steal mode state + toggle for the mini bar
@@ -2950,20 +2909,20 @@ task.spawn(function()
         if not plots then return nil, math.huge, nil end
         local bestPrompt, bestDist, bestName = nil, math.huge, nil
         for _, plot in ipairs(plots:GetChildren()) do
-            if isMyPlot_Instant(plot.Name) then end
+            if isMyPlot_Instant(plot.Name) then continue end
             local plotDist = math.huge
             pcall(function() plotDist = (plot:GetPivot().Position - hrp.Position).Magnitude end)
-            if plotDist > INSTANT_STEAL_RADIUS + 40 then end
+            if plotDist > INSTANT_STEAL_RADIUS + 40 then continue end
             local podiums = plot:FindFirstChild("AnimalPodiums")
-            if not podiums then end
+            if not podiums then continue end
             for _, pod in ipairs(podiums:GetChildren()) do
                 local base = pod:FindFirstChild("Base")
                 local spawn = base and base:FindFirstChild("Spawn")
-                if not spawn then end
+                if not spawn then continue end
                 local dist = (spawn.Position - hrp.Position).Magnitude
-                if dist > INSTANT_STEAL_RADIUS or dist >= bestDist then end
+                if dist > INSTANT_STEAL_RADIUS or dist >= bestDist then continue end
                 local att = spawn:FindFirstChild("PromptAttachment")
-                if not att then end
+                if not att then continue end
                 local prompt = att:FindFirstChildOfClass("ProximityPrompt")
                 if prompt and prompt.Parent and prompt.Enabled then
                     bestPrompt = prompt
@@ -5306,13 +5265,15 @@ local function runAutoSnipe()
             end
         end
         if bestEntry then targetPetData=bestEntry
+            ShowNotification("tp", bestEntry.name .. "  ·  " .. (bestEntry.owner or "?"))
         else
-            if not SharedState.SelectedPetData then ShowNotification("ERROR","No target selected!"); return end
+            if not SharedState.SelectedPetData then ShowNotification("aviso", "sem alvo"); return end
             targetPetData=SharedState.SelectedPetData.animalData
         end
     else
         if not SharedState.SelectedPetData then ShowNotification("ERROR","No target selected!"); return end
         targetPetData = SharedState.SelectedPetData.animalData
+        ShowNotification("tp", targetPetData and (targetPetData.name or "?") or "?")
     end
     if not targetPetData then return end
 
@@ -5680,8 +5641,7 @@ _G.runAutoSnipe = runAutoSnipe
 end)()
 
 local function executeReset()
-    ShowNotification("RESET", "Reiniciando...")
-    ShowNotification("RESET", "Reiniciando personagem...")
+    ShowNotification("reset", "reiniciando...")
     local plr = LocalPlayer
     if not plr then return end
 
@@ -5791,7 +5751,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
             _carpetStatusLabel.Text = carpetSpeedEnabled and "ON" or "OFF"
             _carpetStatusLabel.TextColor3 = carpetSpeedEnabled and Theme.Success or Theme.Error
         end
-        ShowNotification("CARPET SPEED", carpetSpeedEnabled and ("ON  |  "..Config.TpSettings.Tool.."  |  140") or "OFF")
+        ShowNotification("carpet", carpetSpeedEnabled and Config.TpSettings.Tool or "desligado")
     end
 
     if input.KeyCode == stealSpeedKey then
@@ -5928,7 +5888,7 @@ end
 CreateRow("Auto TP on Script Load")
 CreateToggleSwitch(sList:FindFirstChildOfClass("Frame"), Config.TpSettings.TpOnLoad, function(ns, set)
     set(ns); Config.TpSettings.TpOnLoad = ns; SaveConfig()
-    ShowNotification("AUTO TP ON LOAD", ns and "ENABLED" or "DISABLED")
+    ShowNotification("auto tp", ns and "ativado" or "desativado")
 end)
 
 local rMinGen = CreateRow("Min Gen for Auto TP")
@@ -5952,26 +5912,26 @@ end)
 local rFPS = CreateRow("FPS Boost")
 CreateToggleSwitch(rFPS, Config.FPSBoost, function(ns, set)
     set(ns); setFPSBoost(ns)
-    ShowNotification("FPS BOOST", ns and "ENABLED" or "DISABLED")
+    ShowNotification("fps boost", ns and "ativado" or "desativado")
 end)
 
 local rTrace = CreateRow("Tracer Best Brainrot")
 CreateToggleSwitch(rTrace, Config.TracerEnabled, function(ns, set)
     set(ns); Config.TracerEnabled = ns; SaveConfig()
-    ShowNotification("TRACER", ns and "ENABLED" or "DISABLED")
+    ShowNotification("tracer", ns and "ativado" or "desativado")
 end)
 
 local rLineToBase = CreateRow("Line to base")
 CreateToggleSwitch(rLineToBase, Config.LineToBase, function(ns, set)
     set(ns); Config.LineToBase = ns; SaveConfig()
     if not ns and _G.resetPlotBeam then pcall(_G.resetPlotBeam) end
-    ShowNotification("LINE TO BASE", ns and "ENABLED" or "DISABLED")
+    ShowNotification("linha", ns and "ativado" or "desativado")
 end)
 
 local rXray = CreateRow("X-Ray")
 CreateToggleSwitch(rXray, Config.XrayEnabled, function(ns, set)
     set(ns); Config.XrayEnabled = ns; if ns then enableXray() else disableXray() end; SaveConfig()
-    ShowNotification("X-RAY", ns and "ENABLED" or "DISABLED")
+    ShowNotification("x-ray", ns and "ativado" or "desativado")
 end)
 
 CreateSectionHeader("Auto TP")
@@ -5983,7 +5943,7 @@ for _, toolName in ipairs(toolOptions) do
         if rs then
             Config.TpSettings.Tool=toolName; SaveConfig(); set(true)
             for n, sw in pairs(toolSwitches) do if n~=toolName then sw.Set(false) end end
-            ShowNotification("TP TOOL", toolName)
+            ShowNotification("ferramenta", toolName)
         else
             set(Config.TpSettings.Tool==toolName)
         end
@@ -6009,7 +5969,7 @@ for i = 1, 4 do
             local a=(idx==i); btn.BackgroundColor3=a and Theme.Accent1 or Theme.SurfaceHighlight
             btn.TextColor3=a and Color3.new(0,0,0) or Theme.TextPrimary
         end
-        ShowNotification("TP SPEED", "Set to " .. tostring(i))
+        ShowNotification("velocidade tp", tostring(i))
     end)
     table.insert(speedBtns,b)
 end
@@ -6775,6 +6735,8 @@ LocalPlayer:GetAttributeChangedSignal("Stealing"):Connect(function()
     local wasStealing = not isStealing 
 
     if isStealing then
+        local petName = tostring(LocalPlayer:GetAttribute("StealingIndex") or "?")
+        ShowNotification("roubo", petName)
         if Config.AutoInvisDuringSteal and _G.toggleInvisibleSteal and not _G.invisibleStealEnabled then
             _G.toggleInvisibleSteal()
         end
@@ -6782,6 +6744,7 @@ LocalPlayer:GetAttributeChangedSignal("Stealing"):Connect(function()
             triggerClosestUnlock(nil, 19)
         end
     elseif wasStealing then
+        
         if Config.AutoInvisDuringSteal and _G.toggleInvisibleSteal and _G.invisibleStealEnabled then
             _G.toggleInvisibleSteal()
         end
@@ -6846,9 +6809,9 @@ task.spawn(function()
         local lastHadSteal = nil
         while true do
             task.wait(0.3)
-            if not Config.AutoStealSpeed then lastHadSteal = nil; end
+            if not Config.AutoStealSpeed then lastHadSteal = nil; continue end
             local hasSteal = (LocalPlayer:GetAttribute("Stealing") == true)
-            if lastHadSteal == hasSteal then end
+            if lastHadSteal == hasSteal then continue end
             lastHadSteal = hasSteal
             if hasSteal and not stealSpeedEnabled then
                 doEnable()
@@ -7866,7 +7829,7 @@ task.spawn(function()
         title.Size = UDim2.new(0, 110, 1, 0)
         title.Position = UDim2.new(0, 18, 0, 0)
         title.BackgroundTransparency = 1
-        title.Text = "NOTZ HUB PRIVATE"
+        title.Text = "WS"
         title.Font = Enum.Font.GothamBlack
         title.TextSize = 14
         title.TextColor3 = Theme.TextPrimary
@@ -7877,7 +7840,7 @@ task.spawn(function()
         authors.Size = UDim2.new(0, 150, 1, 0)
         authors.Position = UDim2.new(0, 122, 0, 0)
         authors.BackgroundTransparency = 1
-        authors.Text = "@branc"
+        authors.Text = "@o_escolhido  •  v1.4"
         authors.Font = Enum.Font.GothamBold
         authors.TextSize = 10
         authors.TextColor3 = Theme.TextSecondary
@@ -7897,7 +7860,7 @@ task.spawn(function()
 
         local fr2, ac3 = 0, 0
         RunService.Heartbeat:Connect(function(dt)
-            fr2 = fr2 + 1; ac3 = ac3 + dt
+            fr2 += 1; ac3 += dt
             if ac3 >= 1 then
                 local ping3 = math.floor(LocalPlayer:GetNetworkPing()*1000)
                 local fc3 = fr2>=50 and "rgb(80,255,150)" or (fr2>=30 and "rgb(255,210,80)" or "rgb(255,80,80)")
@@ -8115,6 +8078,151 @@ task.spawn(function()
     end
 end)
 
+-- ── TEAM ESP + PLAYER OUTLINE ────────────────────────────────────
+task.spawn(function()
+    local TeamService = pcall(function() return game:GetService("Teams") end) and game:GetService("Teams") or nil
+    local highlightFolder = Instance.new("Folder")
+    highlightFolder.Name = "WSTeamESP"
+    highlightFolder.Parent = PlayerGui
+
+    local TEAM_COLORS = {}
+    local COLOR_PALETTE = {
+        Color3.fromRGB(80,180,255),
+        Color3.fromRGB(255,120,80),
+        Color3.fromRGB(80,255,140),
+        Color3.fromRGB(255,220,60),
+        Color3.fromRGB(200,80,255),
+        Color3.fromRGB(255,80,160),
+        Color3.fromRGB(60,220,220),
+        Color3.fromRGB(255,160,40),
+    }
+    local colorIndex = 0
+    local function getTeamColor(player)
+        if player.Team and player.Team.TeamColor then
+            local tc = player.Team.TeamColor.Color
+            return tc
+        end
+        if not TEAM_COLORS[player.UserId] then
+            colorIndex = (colorIndex % #COLOR_PALETTE) + 1
+            TEAM_COLORS[player.UserId] = COLOR_PALETTE[colorIndex]
+        end
+        return TEAM_COLORS[player.UserId]
+    end
+
+    local _highlights = {}
+
+    local function applyOutline(player)
+        if player == LocalPlayer then return end
+        local char = player.Character
+        if not char then return end
+        local uid = player.UserId
+        local hl = _highlights[uid]
+        if hl and hl.Parent then
+            hl.Adornee = char
+            hl.FillColor = getTeamColor(player)
+            hl.OutlineColor = getTeamColor(player)
+            return
+        end
+        local newHl = Instance.new("Highlight")
+        newHl.Name = "WSOutline_"..player.Name
+        newHl.Adornee = char
+        newHl.FillColor = getTeamColor(player)
+        newHl.FillTransparency = 0.97
+        newHl.OutlineColor = getTeamColor(player)
+        newHl.OutlineTransparency = 0.15
+        newHl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        newHl.Parent = highlightFolder
+        _highlights[uid] = newHl
+    end
+
+    local function removeOutline(player)
+        local hl = _highlights[player.UserId]
+        if hl then pcall(function() hl:Destroy() end) end
+        _highlights[player.UserId] = nil
+    end
+
+    Players.PlayerRemoving:Connect(removeOutline)
+
+    while true do
+        task.wait(0.6)
+        if Config.PlayerESP then
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer then
+                    pcall(applyOutline, plr)
+                end
+            end
+        else
+            for uid, hl in pairs(_highlights) do
+                pcall(function() hl:Destroy() end)
+                _highlights[uid] = nil
+            end
+        end
+    end
+end)
+
+-- ── MINI DESYNC GUI ──────────────────────────────────────────────
+do
+    local miniDsyGui = Instance.new("ScreenGui")
+    miniDsyGui.Name = "WSMiniDesync"
+    miniDsyGui.ResetOnSpawn = false
+    miniDsyGui.IgnoreGuiInset = true
+    miniDsyGui.DisplayOrder = 50
+    miniDsyGui.Parent = PlayerGui
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 90, 0, 30)
+    btn.Position = UDim2.new(0, 8, 0.5, 0)
+    btn.AnchorPoint = Vector2.new(0, 0.5)
+    btn.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+    btn.BorderSizePixel = 0
+    btn.Font = Enum.Font.GothamBlack
+    btn.TextSize = 11
+    btn.AutoButtonColor = false
+    btn.Parent = miniDsyGui
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 15)
+    local dsyStroke = Instance.new("UIStroke", btn)
+    dsyStroke.Thickness = 1.2
+    dsyStroke.Transparency = 0.3
+
+    local function updateDsyBtn()
+        local on = _G.getRaknetDesync and _G.getRaknetDesync()
+        btn.Text = on and "🔴 DESYNC ON" or "⚫ DESYNC OFF"
+        btn.TextColor3 = on and Color3.fromRGB(220,220,220) or Color3.fromRGB(120,120,120)
+        dsyStroke.Color = on and Color3.fromRGB(180,80,80) or Color3.fromRGB(70,70,70)
+    end
+    updateDsyBtn()
+
+    -- Arrastar
+    local dragging, dragStart, startPos = false, nil, nil
+    btn.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = inp.Position
+            startPos = btn.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(inp)
+        if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
+            local delta = inp.Position - dragStart
+            btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+            local delta = inp.Position - dragStart
+            if math.abs(delta.X) < 5 and math.abs(delta.Y) < 5 then
+                if _G.setRaknetDesync then
+                    _G.setRaknetDesync(not (_G.getRaknetDesync and _G.getRaknetDesync()))
+                    updateDsyBtn()
+                end
+            end
+            dragging = false
+        end
+    end)
+end
+
+
+
 task.spawn(function()
     local function makeBlacklistESP(player)
         local char = player.Character
@@ -8156,7 +8264,7 @@ task.spawn(function()
         lbl.Text                 = "🚫 " .. msg
         lbl.Font                 = Enum.Font.GothamBlack
         lbl.TextSize             = 11
-        lbl.TextColor3           = Theme.Error or Color3.fromRGB(255, 80, 80)
+        lbl.TextColor3           = Theme.Error or Color3.fromRGB(180, 180, 180)
         lbl.TextStrokeTransparency = 0.5
         lbl.TextStrokeColor3     = Color3.fromRGB(0, 0, 0)
         lbl.TextXAlignment       = Enum.TextXAlignment.Center
@@ -8203,9 +8311,9 @@ task.spawn(function()
     -- Main loop
     while true do
         task.wait(0.5)
-        if Config.BlacklistESP == false then end
+        if Config.BlacklistESP == false then continue end
         for _, p in ipairs(Players:GetPlayers()) do
-            if p == LocalPlayer then end
+            if p == LocalPlayer then continue end
             pcall(function()
                 if isBlacklisted and isBlacklisted(p.Name) then
                     local char = p.Character
@@ -8693,7 +8801,7 @@ task.spawn(function()
     
     saveBtn.MouseButton1Click:Connect(function()
         savePriorityToConfig()
-        ShowNotification("PRIORITY LIST", "Saved " .. #PRIORITY_LIST .. " pets!")
+        ShowNotification("priority", #PRIORITY_LIST .. " pets salvos")
         local successLabel = Instance.new("TextLabel", mainFrame)
         successLabel.Size = UDim2.new(0, 200, 0, 30)
         successLabel.Position = UDim2.new(0.5, -100, 1, -80)
@@ -8893,7 +9001,7 @@ task.spawn(function()
 
     SendWebhook(name, gen, mut)
                 if Config.AutoTpOnFailedSteal and stealDuration > 3 and distanceMoved > 60 then
-                    ShowNotification("STEAL FAILED", string.format("Auto TPing... (%.1fs, %d studs)", stealDuration, distanceMoved))
+                    ShowNotification("roubo", "falhou · retentando")
                     task.spawn(runAutoSnipe)
                 end
             end
@@ -9220,7 +9328,7 @@ task.spawn(function()
             isJoining = false
             joinBtn.Text = "JOIN"
             joinBtn.BackgroundColor3 = HTheme.Success
-            ShowNotification("JOINER", "Process Cancelled")
+            ShowNotification("joiner", "cancelado")
             return
         end
 
@@ -9229,7 +9337,7 @@ task.spawn(function()
         local delayTime = tonumber(delBox.Text) or 0.5
 
         if jobId == "" or #jobId < 5 then
-            ShowNotification("ERROR", "Invalid JobID")
+            ShowNotification("erro", "job id inválido")
             return
         end
 
@@ -9542,7 +9650,7 @@ function buildBullysSettingsUI()
     hTitle.Size = UDim2.new(0, 120, 1, 0)
     hTitle.Position = UDim2.new(0, 12, 0, 0)
     hTitle.BackgroundTransparency = 1
-    hTitle.Text = "NOTZ HUB PRIVATE"
+    hTitle.Text = "WS"
     hTitle.Font = Enum.Font.GothamBlack
     hTitle.TextSize = 16
     hTitle.TextColor3 = C().TP
@@ -9561,7 +9669,7 @@ function buildBullysSettingsUI()
     task.spawn(function()
         local fr, ac2 = 0, 0
         RunService.Heartbeat:Connect(function(dt)
-            fr = fr + 1; ac2 = ac2 + dt
+            fr += 1; ac2 += dt
             if ac2 >= 1 then
                 local p2 = math.floor(LocalPlayer:GetNetworkPing()*1000)
                 local fc = fr>=50 and "rgb(80,255,150)" or "rgb(255,210,80)"
@@ -9926,7 +10034,7 @@ function buildBullysSettingsUI()
                 TweenService:Create(_sw.dot, TweenInfo.new(0.15), {Position = _on and UDim2.new(1,-17,0.5,-7.5) or UDim2.new(0,2,0.5,-7.5)}):Play()
                 TweenService:Create(_sw.bg,  TweenInfo.new(0.15), {BackgroundColor3 = _on and Theme.Accent1 or Theme.SurfaceHighlight}):Play()
             end
-            ShowNotification("STEAL MODE", "Steal " .. mode:sub(1,1):upper() .. mode:sub(2) .. " ENABLED")
+            ShowNotification("modo", mode)
         end
         local function makeStealRadio(parent, label, id, order)
             local isOn = (id=="nearest"  and Config.StealNearest)
@@ -10459,7 +10567,7 @@ function buildBullysSettingsUI()
             remBtn.MouseButton1Click:Connect(function()
                 pcall(function()
                     removeFromBlacklist(n)
-                    ShowNotification("BLACKLIST", "✅ Removed: " .. n)
+                    ShowNotification("blacklist", "removido · " .. n)
                     refreshBlacklistUI()
                 end)
             end)
@@ -10483,7 +10591,7 @@ function buildBullysSettingsUI()
             local name = blBox.Text:gsub("%s", "")
             if name == "" then return end
             if addToBlacklist(name) then
-                ShowNotification("BLACKLIST", "🚫 Blocked: " .. name)
+                ShowNotification("blacklist", "bloqueado · " .. name)
                 blBox.Text = ""
                 refreshBlacklistUI()
             else
@@ -10562,7 +10670,7 @@ function buildBullysSettingsUI()
         dsyDesc.Size = UDim2.new(1,-16,1,0)
         dsyDesc.Position = UDim2.new(0,8,0,0)
         dsyDesc.BackgroundTransparency = 1
-        dsyDesc.Text = "Modifica pacotes 0x1B via RakNet.\nFaz o servidor perder sua posição.\nRequer executor com suporte a raknet."
+        dsyDesc.Text = "Usa raknet.desync para dessincronizar\nsua posição do servidor.\nRequer executor com suporte a raknet."
         dsyDesc.Font = Enum.Font.GothamMedium
         dsyDesc.TextSize = 11
         dsyDesc.TextColor3 = C().TS
@@ -10726,8 +10834,7 @@ if IS_MOBILE then
                     _carpetStatusLabel.Text       = newState and "ON" or "OFF"
                     _carpetStatusLabel.TextColor3 = newState and Theme.Success or Theme.Error
                 end
-                ShowNotification("CARPET SPEED",
-                    newState and ("ON  |  "..Config.TpSettings.Tool.."  |  140") or "OFF")
+                ShowNotification("carpet", newState and Config.TpSettings.Tool or "desligado")
             end
         )
         -- Atualiza cor do botão mobile conforme estado do carpet
@@ -10735,7 +10842,7 @@ if IS_MOBILE then
             while carpetFloatFrame and carpetFloatFrame.Parent do
                 local on = State.carpetSpeedEnabled
                 TweenService:Create(carpetFloatFrame, TweenInfo.new(0.15), {
-                    BackgroundColor3 = on and Color3.fromRGB(220, 50, 50) or Color3.fromRGB(10, 4, 4)
+                    BackgroundColor3 = on and Color3.fromRGB(140, 140, 140) or Color3.fromRGB(10, 4, 4)
                 }):Play()
                 local stroke = carpetFloatFrame:FindFirstChildOfClass("UIStroke")
                 if stroke then stroke.Transparency = on and 0 or 0.2 end
@@ -11264,7 +11371,7 @@ function buildMiniActionsUI()
         rjS.Thickness = 1
         rjS.Transparency = 0.5
         rej.MouseButton1Click:Connect(function()
-            ShowNotification("REJOIN", "Reconectando...")
+            ShowNotification("rejoin", "reconectando...")
             task.delay(0.5, function()
                 pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
             end)
@@ -11543,7 +11650,7 @@ function buildMiniActionsUI()
         end
         -- call backend carpet lock
         if _G.AutoBuyOnToggle then _G.AutoBuyOnToggle(autoBuyActive) end
-        ShowNotification("AUTO BUY", autoBuyActive and "✅ ENABLED" or "❌ DISABLED")
+        ShowNotification("auto buy", autoBuyActive and "ativado" or "desativado")
     end
 
     -- mini gui button
@@ -11609,12 +11716,12 @@ function buildMiniActionsUI()
                         if lbl:IsA("TextLabel") and lbl.Text and lbl.Text ~= "" then
                             local t = lbl.Text:match("^%s*(.-)%s*$")
                             local tl = t:lower()
-                            if RARITY_WORDS[tl] then end
+                            if RARITY_WORDS[tl] then continue end
                             if t:match("^%$[%d%.]+[KkMmBb]?/s$") then
-                                if genFound=="" then genFound=t end; -- continue
+                                if genFound=="" then genFound=t end; continue
                             end
-                            if t:match("^%$[%d%.]+[KkMmBb]?$") then end
-                            if t:match("^[%d%.]+[KkMmBb]?$") then end
+                            if t:match("^%$[%d%.]+[KkMmBb]?$") then continue end
+                            if t:match("^[%d%.]+[KkMmBb]?$") then continue end
                             if nameFound=="" and #t>1 then nameFound=t end
                         end
                     end
@@ -11637,13 +11744,13 @@ function buildMiniActionsUI()
         local function scanConveyor()
             local results = {}
             for _, obj in ipairs(Workspace:GetDescendants()) do
-                if not (obj:IsA("ProximityPrompt") and obj.Enabled) then end
+                if not (obj:IsA("ProximityPrompt") and obj.Enabled) then continue end
                 local txt = obj.ActionText or ""
-                if not (txt=="Purchase" or txt:lower():find("purchase") or txt:lower():find("comprar")) then end
+                if not (txt=="Purchase" or txt:lower():find("purchase") or txt:lower():find("comprar")) then continue end
                 local part = obj.Parent
-                if not part then end
+                if not part then continue end
                 local realPart = part:IsA("Attachment") and part.Parent or part
-                if not (realPart and realPart:IsA("BasePart")) then end
+                if not (realPart and realPart:IsA("BasePart")) then continue end
                 local model,cur = nil,realPart
                 for _ = 1,8 do
                     if cur and cur:IsA("Model") then model=cur; break end
@@ -11823,8 +11930,8 @@ function buildMiniActionsUI()
         task.spawn(function()
             while true do
                 task.wait(BUY_INTERVAL)
-                if not autoBuyActive then end
-                if not partAlive()   then end
+                if not autoBuyActive then continue end
+                if not partAlive()   then continue end
                 if promptAlive() then
                     firePurchaseNatural(lockedTarget.prompt)
                 end
@@ -11839,18 +11946,18 @@ function buildMiniActionsUI()
                     lockedTarget=nil; lockedPart=nil; lockedModel=nil
                     stopCarpetLock()
                     destroyBodyPos()
-                    -- continue
+                    continue
                 end
                 if lockedPart or lockedModel then
                     if not partAlive() then
-                        ShowNotification("AUTO BUY","📦 Reached base, scanning...")
+                        ShowNotification("auto buy", "escaneando...")
                         lockedTarget=nil; lockedPart=nil; lockedModel=nil
                     end
-                    -- continue
+                    continue
                 end
                 local char = LocalPlayer.Character
                 local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-                if not hrp then end
+                if not hrp then continue end
                 local radius = Config.AutoBuyRange or DETECT_RADIUS
                 local best,bestDist = nil,math.huge
                 for _,entry in ipairs(SharedState.ConveyorAnimals) do
@@ -11864,7 +11971,7 @@ function buildMiniActionsUI()
                     lockedTarget = best
                     lockedPart   = best.part
                     lockedModel  = best.model or best.part.Parent
-                    ShowNotification("AUTO BUY","🔒 "..best.name)
+                    ShowNotification("auto buy", best.name)
                     startCarpetLock()
                 end
             end
@@ -11926,7 +12033,7 @@ function buildMiniActionsUI()
         local newState = not State.infiniteJumpEnabled
         setInfiniteJump(newState)
         updIJMini()
-        ShowNotification("INFINITE JUMP", newState and "ENABLED" or "DISABLED")
+        ShowNotification("infinite jump", newState and "ativado" or "desativado")
     end)
 
     miniSec("REMOTE SELL", 60)
@@ -12048,7 +12155,7 @@ function buildMiniActionsUI()
         rsTitle.Size             = UDim2.new(1, -60, 1, 0)
         rsTitle.Position         = UDim2.new(0, 14, 0, 0)
         rsTitle.BackgroundTransparency = 1
-        rsTitle.Text             = "⬛ NOTZHUB  ·  REMOTE SELL"
+        rsTitle.Text             = "⬛ WS  ·  REMOTE SELL"
         rsTitle.TextColor3       = Theme.TextPrimary
         rsTitle.Font             = Enum.Font.GothamBlack
         rsTitle.TextSize         = 13
@@ -12480,7 +12587,7 @@ function buildMiniActionsUI()
         rsScanBtn.MouseButton1Click:Connect(function()
             rsLockedPlot = nil -- force re-detect
             rsScan()
-            ShowNotification("REMOTE SELL", "Scan completo!")
+            ShowNotification("remote sell", "scan completo")
         end)
     end
 
@@ -12496,7 +12603,7 @@ function buildMiniActionsUI()
         if rsVisible and rsScanFn then
             task.spawn(rsScanFn)
         end
-        ShowNotification("REMOTE SELL", rsVisible and "✅ ABERTO" or "❌ FECHADO")
+        ShowNotification("remote sell", rsVisible and "aberto" or "fechado")
     end)
     _G.toggleRemoteSell = function()
         rsBtn.MouseButton1Click:Fire()
@@ -12519,37 +12626,17 @@ end)
 
 -- ── RAKNET DESYNC (liga/desliga) ────────────────────────────────
 local _raknetDesyncActive = false
-local _raknetHookRegistered = false
 
 local function setRaknetDesync(enabled)
     _raknetDesyncActive = enabled
     Config.RaknetDesyncEnabled = enabled
     SaveConfig()
-    ShowNotification("DESYNC RAKNET", enabled and "ATIVADO" or "DESATIVADO")
+    pcall(function() raknet.desync(enabled) end)
+    ShowNotification("desync", enabled and "ativado" or "desativado")
 end
 
-local function initRaknetHook()
-    if _raknetHookRegistered then return end
-    if not (typeof(raknet) == "table" and typeof(raknet.add_send_hook) == "function") then
-        warn("[NOTZHUB] raknet não disponível neste executor")
-        return
-    end
-    _raknetHookRegistered = true
-    raknet.add_send_hook(function(packet)
-        if not _raknetDesyncActive then return end
-        if packet.PacketId == 0x1B then
-            local data = packet.AsBuffer
-            buffer.writeu32(data, 1, 0xFFFFFFFF)
-            buffer.writeu32(data, 5, 0xFFFFFFFF)
-            buffer.writeu32(data, 9, 0xFFFFFFFF)
-            packet:SetData(data)
-        end
-    end)
-end
-
--- Registra o hook e restaura estado salvo
-pcall(initRaknetHook)
 if Config.RaknetDesyncEnabled then
+    pcall(function() raknet.desync(true) end)
     _raknetDesyncActive = true
 end
 _G.setRaknetDesync = setRaknetDesync
@@ -12560,7 +12647,7 @@ task.spawn(function()
     local function cvOk(t) if not t or t=="" then return false end; local c=(t:gsub("<[^>]+>","")):match("^%s*(.-)%s*$") or ""; if #c<=1 then return false end; local u=c:upper(); if u:find("^%$") or u:find("/S$") or u:find("^[%d%.]+") then return false end; return not BL[u] end
     local function pgv(t) if type(t)~="string" then return nil end; local u=t:gsub("<[^>]+>",""):upper(); if not u:find("%$") or not u:find("/S") then return nil end; local c=u:gsub("%$",""):gsub("/S",""):gsub("%s+",""); local n=tonumber(c:match("[%d%.]+")); if not n then return nil end; if c:find("B") then return n*1e9 elseif c:find("M") then return n*1e6 elseif c:find("K") then return n*1e3 else return n end end
     local function exM(m) if not m then return nil,nil,0 end; local bN,bG,bV=nil,nil,0; for _,bb in ipairs(m:GetDescendants()) do if bb:IsA("BillboardGui") or bb:IsA("SurfaceGui") then for _,d in ipairs(bb:GetDescendants()) do if d:IsA("TextLabel") and d.Text then local v=pgv(d.Text); if v and v>bV then bV=v;bG=d.Text:gsub("<[^>]+>",""); local co=d.Parent; if co then local f=nil; for _,s in ipairs(co:GetChildren()) do if s:IsA("TextLabel") and s.Name=="DisplayName" then local c2=(s.Text or ""):gsub("<[^>]+>",""):match("^%s*(.-)%s*$"); if cvOk(c2) then f=c2;break end end end; if not f then local bt,bl=nil,0; for _,s in ipairs(co:GetChildren()) do if s:IsA("TextLabel") then local c2=(s.Text or ""):gsub("<[^>]+>",""):match("^%s*(.-)%s*$") or ""; if cvOk(c2) and #c2>bl then bt,bl=c2,#c2 end end end; if bt then f=bt end end; if f then bN=f end end end end end end end; return bN,bG,bV end
-    local function scan() local res,vis={},{}; local deb=Workspace:FindFirstChild("Debris") or Workspace; for _,c in ipairs(deb:GetChildren()) do if c:IsA("Model") or c:IsA("BasePart") then local n,g,gv=exM(c); if gv and gv>0 then local p=c:IsA("BasePart") and c or (c:IsA("Model") and c.PrimaryPart); if not p then for _,ch in ipairs(c:GetChildren()) do if ch:IsA("BasePart") then p=ch;break end end end; if p then table.insert(vis,{name=n,gen=g,gv=gv,part=p,model=c}) end end end end; for _,obj in ipairs(Workspace:GetDescendants()) do if obj:IsA("ProximityPrompt") and obj.Enabled then local tx=(obj.ActionText or ""):lower(); if tx:find("purchase") or tx:find("comprar") or tx:find("buy") then local pp=obj.Parent; if not pp then end; local rp=pp:IsA("Attachment") and pp.Parent or pp; if not(rp and rp:IsA("BasePart")) then end; local fN,fG,fGV,fM="Brainrot","",0,nil; local md,mt=15,nil; for _,v in ipairs(vis) do local d=(v.part.Position-rp.Position).Magnitude; if d<md then md=d;mt=v end end; if mt then fN=mt.name or "Brainrot";fG=mt.gen or "";fGV=mt.gv or 0;fM=mt.model else local sr=rp;local cu=rp; while cu and cu.Parent and cu.Parent~=Workspace do sr=cu;cu=cu.Parent end; local n,g,gv=exM(sr); if n then fN=n end; if g then fG=g end; if gv and gv>0 then fGV=gv end; fM=sr end; table.insert(res,{name=fN,gen=fG,gv=fGV,prompt=obj,part=rp,model=fM,uid="conv_"..tostring(obj)}) end end end; return res end
+    local function scan() local res,vis={},{}; local deb=Workspace:FindFirstChild("Debris") or Workspace; for _,c in ipairs(deb:GetChildren()) do if c:IsA("Model") or c:IsA("BasePart") then local n,g,gv=exM(c); if gv and gv>0 then local p=c:IsA("BasePart") and c or (c:IsA("Model") and c.PrimaryPart); if not p then for _,ch in ipairs(c:GetChildren()) do if ch:IsA("BasePart") then p=ch;break end end end; if p then table.insert(vis,{name=n,gen=g,gv=gv,part=p,model=c}) end end end end; for _,obj in ipairs(Workspace:GetDescendants()) do if obj:IsA("ProximityPrompt") and obj.Enabled then local tx=(obj.ActionText or ""):lower(); if tx:find("purchase") or tx:find("comprar") or tx:find("buy") then local pp=obj.Parent; if not pp then continue end; local rp=pp:IsA("Attachment") and pp.Parent or pp; if not(rp and rp:IsA("BasePart")) then continue end; local fN,fG,fGV,fM="Brainrot","",0,nil; local md,mt=15,nil; for _,v in ipairs(vis) do local d=(v.part.Position-rp.Position).Magnitude; if d<md then md=d;mt=v end end; if mt then fN=mt.name or "Brainrot";fG=mt.gen or "";fGV=mt.gv or 0;fM=mt.model else local sr=rp;local cu=rp; while cu and cu.Parent and cu.Parent~=Workspace do sr=cu;cu=cu.Parent end; local n,g,gv=exM(sr); if n then fN=n end; if g then fG=g end; if gv and gv>0 then fGV=gv end; fM=sr end; table.insert(res,{name=fN,gen=fG,gv=fGV,prompt=obj,part=rp,model=fM,uid="conv_"..tostring(obj)}) end end end; return res end
     while true do local ok2,found=pcall(scan); if ok2 and found then SharedState.ConveyorAnimals=found; local b=-1; for _,e in ipairs(found) do if(e.gv or 0)>b then b=e.gv end end; SharedState.BestConveyorGv=b end; task.wait(0.5) end
 end)
 
@@ -12575,9 +12662,9 @@ local function tpToBestBrainrot()
     local cacheHasAnyBase = SharedState.AllAnimalsCache and #SharedState.AllAnimalsCache > 0
     local useConv = bestConv and bestConv.part and bestConv.part.Parent
                     and not cacheHasAnyBase  -- so vai pra esteira se cache de base esta vazio
-    if useConv then ShowNotification("TP BEST","ESTEIRA → "..(bestConv.name or "?")); task.spawn(function() local char=LocalPlayer.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); local hum=char and char:FindFirstChild("Humanoid"); if not hrp or not hum then return end; local tool=LocalPlayer.Backpack:FindFirstChild(Config.TpSettings.Tool) or char:FindFirstChild(Config.TpSettings.Tool); if tool then hum:EquipTool(tool) end; hrp.AssemblyLinearVelocity=Vector3.new(0,280,0); RunService.Heartbeat:Wait(); hrp.CFrame=CFrame.new(bestConv.part.Position+Vector3.new(0,3,0)) end); return end
-    if bestBase then ShowNotification("TP BEST","BASE → "..bestBase.name); SharedState.SelectedPetData={petName=bestBase.name,mpsText=bestBase.genText,mpsValue=bestBase.genValue,owner=bestBase.owner,plot=bestBase.plot,slot=bestBase.slot,uid=bestBase.uid,mutation=bestBase.mutation,animalData=bestBase}; task.spawn(runAutoSnipe)
-    else ShowNotification("TP BEST","No brainrot found!") end
+    if useConv then ShowNotification("esteira", bestConv.name or "?"); task.spawn(function() local char=LocalPlayer.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); local hum=char and char:FindFirstChild("Humanoid"); if not hrp or not hum then return end; local tool=LocalPlayer.Backpack:FindFirstChild(Config.TpSettings.Tool) or char:FindFirstChild(Config.TpSettings.Tool); if tool then hum:EquipTool(tool) end; hrp.AssemblyLinearVelocity=Vector3.new(0,280,0); RunService.Heartbeat:Wait(); hrp.CFrame=CFrame.new(bestConv.part.Position+Vector3.new(0,3,0)) end); return end
+    if bestBase then ShowNotification("tp", bestBase.name .. "  ·  " .. (bestBase.owner or "?")); SharedState.SelectedPetData={petName=bestBase.name,mpsText=bestBase.genText,mpsValue=bestBase.genValue,owner=bestBase.owner,plot=bestBase.plot,slot=bestBase.slot,uid=bestBase.uid,mutation=bestBase.mutation,animalData=bestBase}; task.spawn(runAutoSnipe)
+    else ShowNotification("tp", "nenhum encontrado") end
 end
 _G.tpToBestBrainrot=tpToBestBrainrot
 
@@ -12644,7 +12731,7 @@ task.spawn(function()
 
             b.MouseButton1Click:Connect(function()
                 if isBlacklisted(plr.Name) then
-                    ShowNotification("STEALERS","⛔ "..plr.Name.." is blacklisted")
+                    ShowNotification("blacklist", plr.Name)
                     return
                 end
                 local adminFunc = _G.runAdminCommand
@@ -12653,15 +12740,15 @@ task.spawn(function()
                     adminFunc = _G.runAdminCommand
                 end
                 if not adminFunc then
-                    ShowNotification("STEALERS","Admin not ready yet")
+                    ShowNotification("admin", "cooldown")
                     return
                 end
-                ShowNotification("STEALERS","→ "..def.cmd.." on "..plr.Name)
+                ShowNotification(def.cmd, plr.Name)
                 local ok, result = pcall(adminFunc, plr, def.cmd)
                 if ok and result then
-                    ShowNotification("STEALERS","✓ "..def.cmd.." sent to "..plr.Name)
+                    ShowNotification(def.cmd, "enviado · " .. plr.Name)
                 else
-                    ShowNotification("STEALERS","✗ "..def.cmd.." failed on "..plr.Name)
+                    ShowNotification(def.cmd, "falhou · " .. plr.Name)
                 end
             end)
         end
@@ -12680,11 +12767,11 @@ task.spawn(function()
         blBtn.MouseButton1Click:Connect(function()
             local already=false
             for _,n in ipairs(BlacklistedPlayers) do if n:lower()==plr.Name:lower() then already=true;break end end
-            if already then ShowNotification("BLACKLIST",plr.Name.." already blacklisted");return end
+            if already then ShowNotification("blacklist", "já bloqueado · " .. plr.Name);return end
             table.insert(BlacklistedPlayers,plr.Name); Config.Blacklist=BlacklistedPlayers; SaveConfig()
             if refreshBlacklistUI then refreshBlacklistUI() end
             blBtn.BackgroundColor3=Color3.fromRGB(30,120,50); blBtn.Text="OK"
-            ShowNotification("BLACKLIST","Blacklisted: "..plr.Name)
+            ShowNotification("blacklist", "bloqueado · " .. plr.Name)
             task.delay(1.2,function() if blBtn and blBtn.Parent then blBtn.BackgroundColor3=Color3.fromRGB(120,20,20);blBtn.Text="BL" end end)
         end)
 
@@ -12979,7 +13066,7 @@ task.spawn(function()
                                 bb.Name = "StealPlotESP_" .. plr.Name
                                 bb.Adornee = part
                                 bb.AlwaysOnTop = true
-                                bb.Size = UDim2.new(0, 210, 0, 132)
+                                bb.Size = UDim2.new(0, 210, 0, 162)
                                 bb.StudsOffset = Vector3.new(0, 7, 0)
                                 bb.MaxDistance = 650
                                 bb.LightInfluence = 0
@@ -13082,6 +13169,67 @@ task.spawn(function()
                                     no3d.Parent = previewHost
                                     Instance.new("UICorner", no3d).CornerRadius = UDim.new(0, 8)
                                 end
+
+                                -- Botão TP para a base do stealer
+                                local tpBtn = Instance.new("TextButton")
+                                tpBtn.Name = "TPButton"
+                                tpBtn.Size = UDim2.new(1, -10, 0, 22)
+                                tpBtn.Position = UDim2.new(0, 5, 0, 130)
+                                tpBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                                tpBtn.BorderSizePixel = 0
+                                tpBtn.Font = Enum.Font.GothamBlack
+                                tpBtn.TextSize = 10
+                                tpBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+                                tpBtn.Text = "TP BASE DO STEALER"
+                                tpBtn.Parent = root
+                                Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 6)
+                                local tpStroke = Instance.new("UIStroke", tpBtn)
+                                tpStroke.Color = Color3.fromRGB(140, 140, 140)
+                                tpStroke.Thickness = 1
+                                tpStroke.Transparency = 0.5
+
+                                tpBtn.MouseButton1Click:Connect(function()
+                                    local char = LocalPlayer.Character
+                                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                                    if not hrp then return end
+                                    -- Tenta pegar DeliveryHitbox do plot (posição real da base)
+                                    local targetPos = nil
+                                    if plot then
+                                        local dh = plot:FindFirstChild("DeliveryHitbox")
+                                        if dh and dh:IsA("BasePart") then
+                                            targetPos = dh.Position + Vector3.new(0, 6, 0)
+                                        end
+                                    end
+                                    -- Fallback para a part do sign
+                                    if not targetPos and part and part.Parent then
+                                        targetPos = part.Position + Vector3.new(0, 6, 0)
+                                    end
+                                    if targetPos then
+                                        hrp.CFrame = CFrame.new(targetPos)
+                                        ShowNotification("tp", plr.DisplayName)
+                                    end
+                                end)
+                                tpBtn.InputBegan:Connect(function(inp)
+                                    if inp.UserInputType == Enum.UserInputType.Touch then
+                                        local char = LocalPlayer.Character
+                                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                                        if not hrp then return end
+                                        local targetPos = nil
+                                        if plot then
+                                            local dh = plot:FindFirstChild("DeliveryHitbox")
+                                            if dh and dh:IsA("BasePart") then
+                                                targetPos = dh.Position + Vector3.new(0, 6, 0)
+                                            end
+                                        end
+                                        if not targetPos and part and part.Parent then
+                                            targetPos = part.Position + Vector3.new(0, 6, 0)
+                                        end
+                                        if targetPos then
+                                            hrp.CFrame = CFrame.new(targetPos)
+                                            ShowNotification("tp", plr.DisplayName)
+                                        end
+                                    end
+                                end)
 
                                 byUser[plr.UserId] = { bill = bb, adornee = part, stealKey = stealKey }
                             else
