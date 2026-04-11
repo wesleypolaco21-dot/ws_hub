@@ -2,11 +2,12 @@
 -- ║         WS HUB  •  v1.7             ║
 -- ║         @o_escolhido                ║
 -- ╚══════════════════════════════════════╝
+do
 if not game:IsLoaded() then game.Loaded:Wait() end
 pcall(function() game:GetService("Players").RespawnTime = 0 end)
 pcall(function() if setfpscap then setfpscap(9999) end end)
 
-local SharedState = {
+SharedState = {
     ConveyorAnimals = {},
     BestConveyorGv = -1,
     SelectedPetData = nil,
@@ -25,11 +26,11 @@ do
     local Sync = require(game.ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Synchronizer"))
 
     for name, fn in pairs(Sync) do
-        if typeof(fn) ~= "function" then continue end
-        if isexecutorclosure(fn) then continue end
+        if typeof(fn) ~= "function" then end
+        if isexecutorclosure(fn) then end
 
         local ok, ups = pcall(debug.getupvalues, fn)
-        if not ok then continue end
+        if not ok then end
 
         for idx, val in pairs(ups) do
             if typeof(val) == "function" and not isexecutorclosure(val) then
@@ -51,7 +52,7 @@ do
     end
 end
 
-local Services = {
+Services = {
     Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
     UserInputService = game:GetService("UserInputService"),
@@ -64,21 +65,20 @@ local Services = {
     GuiService = game:GetService("GuiService"),
     TeleportService = game:GetService("TeleportService"),
 }
-local Players = Services.Players
-local RunService = Services.RunService
-local UserInputService = Services.UserInputService
-local ReplicatedStorage = Services.ReplicatedStorage
-local TweenService = Services.TweenService
-local HttpService = Services.HttpService
-local Workspace = Services.Workspace
-local Lighting = Services.Lighting
-local VirtualInputManager = Services.VirtualInputManager
-local GuiService = Services.GuiService
-local TeleportService = Services.TeleportService
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+Players = Services.Players
+RunService = Services.RunService
+UserInputService = Services.UserInputService
+ReplicatedStorage = Services.ReplicatedStorage
+TweenService = Services.TweenService
+HttpService = Services.HttpService
+Workspace = Services.Workspace
+Lighting = Services.Lighting
+VirtualInputManager = Services.VirtualInputManager
+GuiService = Services.GuiService
+TeleportService = Services.TeleportService
+LocalPlayer = Players.LocalPlayer
+PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local Decrypted
 Decrypted = setmetatable({}, {
     __index = function(S, ez)
         local Netty = ReplicatedStorage.Packages.Net
@@ -97,11 +97,11 @@ Decrypted = setmetatable({}, {
         return rawget(Decrypted, ez)
     end
 })
-local Utility = {}
+Utility = {}
 function Utility:LarpNet(F) return Decrypted[F] end
 
 -- Safe conversion for configurable keybind strings.
-local function safeKeyCode(name, fallback)
+function safeKeyCode(name, fallback)
     if type(name) ~= "string" then return fallback end
     local cleaned = name:gsub("^%s+", ""):gsub("%s+$", "")
     if cleaned == "" or cleaned == "--" then return fallback end
@@ -110,8 +110,8 @@ local function safeKeyCode(name, fallback)
     return fallback
 end
 
-local FileName = "BullysRemastered_v1.json" 
-local DefaultConfig = {
+FileName = "BullysRemastered_v1.json" 
+DefaultConfig = {
     Positions = {
         AdminPanel = {X = 0.1859375, Y = 0.5767123526556385}, 
         AdminToolsPanel = {X = 0.02, Y = 0.25},
@@ -212,7 +212,7 @@ local DefaultConfig = {
 }
 
 
-local Config = DefaultConfig
+Config = DefaultConfig
 
 if isfile and isfile(FileName) then
     pcall(function()
@@ -241,7 +241,7 @@ if Config.CurrentTheme and THEMES and THEMES[Config.CurrentTheme] then
     for k, v in pairs(THEMES[Config.CurrentTheme]) do Theme[k] = v end
 end
 
-local function SaveConfig()
+function SaveConfig()
     if writefile then
         pcall(function()
             local toSave = {}
@@ -267,15 +267,15 @@ end
 _G.invisibleStealEnabled = false
 _G.RecoveryInProgress = false
 
-local function getControls()
+function getControls()
 	local playerScripts = LocalPlayer:WaitForChild("PlayerScripts")
 	local playerModule = require(playerScripts:WaitForChild("PlayerModule"))
 	return playerModule:GetControls()
 end
 
-local Controls = getControls()
+Controls = getControls()
 
-local function kickPlayer()
+function kickPlayer()
     local ok = pcall(function()
         if game.Shutdown then
             game:Shutdown()
@@ -288,7 +288,7 @@ local function kickPlayer()
     end
 end
 
-local function walkForward(seconds)
+function walkForward(seconds)
     local char = LocalPlayer.Character
     local hum = char:FindFirstChild("Humanoid")
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -309,7 +309,7 @@ local function walkForward(seconds)
 end
 
 
-local function instantClone()
+function instantClone()
     if _G.isCloning then return end
     _G.isCloning = true
 
@@ -366,7 +366,7 @@ local function instantClone()
     _G.isCloning = false
 end
 
-local function triggerClosestUnlock(yLevel, maxY)
+function triggerClosestUnlock(yLevel, maxY)
     local character = LocalPlayer.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -421,7 +421,7 @@ local function triggerClosestUnlock(yLevel, maxY)
     end
 end
 
-local Theme = {
+Theme = {
     Background      = Color3.fromRGB(15, 15, 15),
     Surface         = Color3.fromRGB(25, 25, 25),
     SurfaceHighlight= Color3.fromRGB(45, 45, 45),
@@ -2086,7 +2086,7 @@ task.spawn(function()
                             if pp then
                                 local nameL = d.Name:lower()
                                 if nameL:find("podium", 1, true) or nameL:find("base", 1, true) or nameL:find("plotsign", 1, true) then
-                                    continue
+                                    -- continue
                                 end
                                 local score = 0
                                 if nameL == petNameNorm then
@@ -3003,20 +3003,20 @@ task.spawn(function()
         if not plots then return nil, math.huge, nil end
         local bestPrompt, bestDist, bestName = nil, math.huge, nil
         for _, plot in ipairs(plots:GetChildren()) do
-            if isMyPlot_Instant(plot.Name) then continue end
+            if isMyPlot_Instant(plot.Name) then end
             local plotDist = math.huge
             pcall(function() plotDist = (plot:GetPivot().Position - hrp.Position).Magnitude end)
-            if plotDist > INSTANT_STEAL_RADIUS + 40 then continue end
+            if plotDist > INSTANT_STEAL_RADIUS + 40 then end
             local podiums = plot:FindFirstChild("AnimalPodiums")
-            if not podiums then continue end
+            if not podiums then end
             for _, pod in ipairs(podiums:GetChildren()) do
                 local base = pod:FindFirstChild("Base")
                 local spawn = base and base:FindFirstChild("Spawn")
-                if not spawn then continue end
+                if not spawn then end
                 local dist = (spawn.Position - hrp.Position).Magnitude
-                if dist > INSTANT_STEAL_RADIUS or dist >= bestDist then continue end
+                if dist > INSTANT_STEAL_RADIUS or dist >= bestDist then end
                 local att = spawn:FindFirstChild("PromptAttachment")
-                if not att then continue end
+                if not att then end
                 local prompt = att:FindFirstChildOfClass("ProximityPrompt")
                 if prompt and prompt.Parent and prompt.Enabled then
                     bestPrompt = prompt
@@ -6903,9 +6903,9 @@ task.spawn(function()
         local lastHadSteal = nil
         while true do
             task.wait(0.3)
-            if not Config.AutoStealSpeed then lastHadSteal = nil; continue end
+            if not Config.AutoStealSpeed then lastHadSteal = nil; end
             local hasSteal = (LocalPlayer:GetAttribute("Stealing") == true)
-            if lastHadSteal == hasSteal then continue end
+            if lastHadSteal == hasSteal then end
             lastHadSteal = hasSteal
             if hasSteal and not stealSpeedEnabled then
                 doEnable()
@@ -7954,7 +7954,7 @@ task.spawn(function()
 
         local fr2, ac3 = 0, 0
         RunService.Heartbeat:Connect(function(dt)
-            fr2 += 1; ac3 += dt
+            fr2 = fr2 + 1; ac3 = ac3 + dt
             if ac3 >= 1 then
                 local ping3 = math.floor(LocalPlayer:GetNetworkPing()*1000)
                 local fc3 = fr2>=50 and "rgb(80,255,150)" or (fr2>=30 and "rgb(255,210,80)" or "rgb(255,80,80)")
@@ -8639,9 +8639,9 @@ task.spawn(function()
     -- Main loop
     while true do
         task.wait(0.5)
-        if Config.BlacklistESP == false then continue end
+        if Config.BlacklistESP == false then end
         for _, p in ipairs(Players:GetPlayers()) do
-            if p == LocalPlayer then continue end
+            if p == LocalPlayer then end
             pcall(function()
                 if isBlacklisted and isBlacklisted(p.Name) then
                     local char = p.Character
@@ -9997,7 +9997,7 @@ function buildBullysSettingsUI()
     task.spawn(function()
         local fr, ac2 = 0, 0
         RunService.Heartbeat:Connect(function(dt)
-            fr += 1; ac2 += dt
+            fr = fr + 1; ac2 = ac2 + dt
             if ac2 >= 1 then
                 local p2 = math.floor(LocalPlayer:GetNetworkPing()*1000)
                 local fc = fr>=50 and "rgb(80,255,150)" or "rgb(255,210,80)"
@@ -12044,12 +12044,12 @@ function buildMiniActionsUI()
                         if lbl:IsA("TextLabel") and lbl.Text and lbl.Text ~= "" then
                             local t = lbl.Text:match("^%s*(.-)%s*$")
                             local tl = t:lower()
-                            if RARITY_WORDS[tl] then continue end
+                            if RARITY_WORDS[tl] then end
                             if t:match("^%$[%d%.]+[KkMmBb]?/s$") then
-                                if genFound=="" then genFound=t end; continue
+                                if genFound=="" then genFound=t end; -- continue
                             end
-                            if t:match("^%$[%d%.]+[KkMmBb]?$") then continue end
-                            if t:match("^[%d%.]+[KkMmBb]?$") then continue end
+                            if t:match("^%$[%d%.]+[KkMmBb]?$") then end
+                            if t:match("^[%d%.]+[KkMmBb]?$") then end
                             if nameFound=="" and #t>1 then nameFound=t end
                         end
                     end
@@ -12072,13 +12072,13 @@ function buildMiniActionsUI()
         local function scanConveyor()
             local results = {}
             for _, obj in ipairs(Workspace:GetDescendants()) do
-                if not (obj:IsA("ProximityPrompt") and obj.Enabled) then continue end
+                if not (obj:IsA("ProximityPrompt") and obj.Enabled) then end
                 local txt = obj.ActionText or ""
-                if not (txt=="Purchase" or txt:lower():find("purchase") or txt:lower():find("comprar")) then continue end
+                if not (txt=="Purchase" or txt:lower():find("purchase") or txt:lower():find("comprar")) then end
                 local part = obj.Parent
-                if not part then continue end
+                if not part then end
                 local realPart = part:IsA("Attachment") and part.Parent or part
-                if not (realPart and realPart:IsA("BasePart")) then continue end
+                if not (realPart and realPart:IsA("BasePart")) then end
                 local model,cur = nil,realPart
                 for _ = 1,8 do
                     if cur and cur:IsA("Model") then model=cur; break end
@@ -12258,8 +12258,8 @@ function buildMiniActionsUI()
         task.spawn(function()
             while true do
                 task.wait(BUY_INTERVAL)
-                if not autoBuyActive then continue end
-                if not partAlive()   then continue end
+                if not autoBuyActive then end
+                if not partAlive()   then end
                 if promptAlive() then
                     firePurchaseNatural(lockedTarget.prompt)
                 end
@@ -12274,18 +12274,18 @@ function buildMiniActionsUI()
                     lockedTarget=nil; lockedPart=nil; lockedModel=nil
                     stopCarpetLock()
                     destroyBodyPos()
-                    continue
+                    -- continue
                 end
                 if lockedPart or lockedModel then
                     if not partAlive() then
                         ShowNotification("auto buy", "escaneando...")
                         lockedTarget=nil; lockedPart=nil; lockedModel=nil
                     end
-                    continue
+                    -- continue
                 end
                 local char = LocalPlayer.Character
                 local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-                if not hrp then continue end
+                if not hrp then end
                 local radius = Config.AutoBuyRange or DETECT_RADIUS
                 local best,bestDist = nil,math.huge
                 for _,entry in ipairs(SharedState.ConveyorAnimals) do
@@ -12975,7 +12975,7 @@ task.spawn(function()
     local function cvOk(t) if not t or t=="" then return false end; local c=(t:gsub("<[^>]+>","")):match("^%s*(.-)%s*$") or ""; if #c<=1 then return false end; local u=c:upper(); if u:find("^%$") or u:find("/S$") or u:find("^[%d%.]+") then return false end; return not BL[u] end
     local function pgv(t) if type(t)~="string" then return nil end; local u=t:gsub("<[^>]+>",""):upper(); if not u:find("%$") or not u:find("/S") then return nil end; local c=u:gsub("%$",""):gsub("/S",""):gsub("%s+",""); local n=tonumber(c:match("[%d%.]+")); if not n then return nil end; if c:find("B") then return n*1e9 elseif c:find("M") then return n*1e6 elseif c:find("K") then return n*1e3 else return n end end
     local function exM(m) if not m then return nil,nil,0 end; local bN,bG,bV=nil,nil,0; for _,bb in ipairs(m:GetDescendants()) do if bb:IsA("BillboardGui") or bb:IsA("SurfaceGui") then for _,d in ipairs(bb:GetDescendants()) do if d:IsA("TextLabel") and d.Text then local v=pgv(d.Text); if v and v>bV then bV=v;bG=d.Text:gsub("<[^>]+>",""); local co=d.Parent; if co then local f=nil; for _,s in ipairs(co:GetChildren()) do if s:IsA("TextLabel") and s.Name=="DisplayName" then local c2=(s.Text or ""):gsub("<[^>]+>",""):match("^%s*(.-)%s*$"); if cvOk(c2) then f=c2;break end end end; if not f then local bt,bl=nil,0; for _,s in ipairs(co:GetChildren()) do if s:IsA("TextLabel") then local c2=(s.Text or ""):gsub("<[^>]+>",""):match("^%s*(.-)%s*$") or ""; if cvOk(c2) and #c2>bl then bt,bl=c2,#c2 end end end; if bt then f=bt end end; if f then bN=f end end end end end end end; return bN,bG,bV end
-    local function scan() local res,vis={},{}; local deb=Workspace:FindFirstChild("Debris") or Workspace; for _,c in ipairs(deb:GetChildren()) do if c:IsA("Model") or c:IsA("BasePart") then local n,g,gv=exM(c); if gv and gv>0 then local p=c:IsA("BasePart") and c or (c:IsA("Model") and c.PrimaryPart); if not p then for _,ch in ipairs(c:GetChildren()) do if ch:IsA("BasePart") then p=ch;break end end end; if p then table.insert(vis,{name=n,gen=g,gv=gv,part=p,model=c}) end end end end; for _,obj in ipairs(Workspace:GetDescendants()) do if obj:IsA("ProximityPrompt") and obj.Enabled then local tx=(obj.ActionText or ""):lower(); if tx:find("purchase") or tx:find("comprar") or tx:find("buy") then local pp=obj.Parent; if not pp then continue end; local rp=pp:IsA("Attachment") and pp.Parent or pp; if not(rp and rp:IsA("BasePart")) then continue end; local fN,fG,fGV,fM="Brainrot","",0,nil; local md,mt=15,nil; for _,v in ipairs(vis) do local d=(v.part.Position-rp.Position).Magnitude; if d<md then md=d;mt=v end end; if mt then fN=mt.name or "Brainrot";fG=mt.gen or "";fGV=mt.gv or 0;fM=mt.model else local sr=rp;local cu=rp; while cu and cu.Parent and cu.Parent~=Workspace do sr=cu;cu=cu.Parent end; local n,g,gv=exM(sr); if n then fN=n end; if g then fG=g end; if gv and gv>0 then fGV=gv end; fM=sr end; table.insert(res,{name=fN,gen=fG,gv=fGV,prompt=obj,part=rp,model=fM,uid="conv_"..tostring(obj)}) end end end; return res end
+    local function scan() local res,vis={},{}; local deb=Workspace:FindFirstChild("Debris") or Workspace; for _,c in ipairs(deb:GetChildren()) do if c:IsA("Model") or c:IsA("BasePart") then local n,g,gv=exM(c); if gv and gv>0 then local p=c:IsA("BasePart") and c or (c:IsA("Model") and c.PrimaryPart); if not p then for _,ch in ipairs(c:GetChildren()) do if ch:IsA("BasePart") then p=ch;break end end end; if p then table.insert(vis,{name=n,gen=g,gv=gv,part=p,model=c}) end end end end; for _,obj in ipairs(Workspace:GetDescendants()) do if obj:IsA("ProximityPrompt") and obj.Enabled then local tx=(obj.ActionText or ""):lower(); if tx:find("purchase") or tx:find("comprar") or tx:find("buy") then local pp=obj.Parent; if not pp then end; local rp=pp:IsA("Attachment") and pp.Parent or pp; if not(rp and rp:IsA("BasePart")) then end; local fN,fG,fGV,fM="Brainrot","",0,nil; local md,mt=15,nil; for _,v in ipairs(vis) do local d=(v.part.Position-rp.Position).Magnitude; if d<md then md=d;mt=v end end; if mt then fN=mt.name or "Brainrot";fG=mt.gen or "";fGV=mt.gv or 0;fM=mt.model else local sr=rp;local cu=rp; while cu and cu.Parent and cu.Parent~=Workspace do sr=cu;cu=cu.Parent end; local n,g,gv=exM(sr); if n then fN=n end; if g then fG=g end; if gv and gv>0 then fGV=gv end; fM=sr end; table.insert(res,{name=fN,gen=fG,gv=fGV,prompt=obj,part=rp,model=fM,uid="conv_"..tostring(obj)}) end end end; return res end
     while true do local ok2,found=pcall(scan); if ok2 and found then SharedState.ConveyorAnimals=found; local b=-1; for _,e in ipairs(found) do if(e.gv or 0)>b then b=e.gv end end; SharedState.BestConveyorGv=b end; task.wait(0.5) end
 end)
 
@@ -13583,4 +13583,4 @@ task.spawn(function()
             for _, uid in ipairs(stale) do clearRow(uid) end
         end
     end
-end)
+end)end
