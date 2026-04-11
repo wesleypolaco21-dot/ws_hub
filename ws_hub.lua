@@ -236,7 +236,7 @@ if Config.CurrentTheme and THEMES and THEMES[Config.CurrentTheme] then
 end
 
 function SaveConfig()
-    ShowNotification("CONFIG", "Configurações salvas com sucesso!")
+    ShowNotification("CONFIG", "Configurações salvas!")
     if writefile then
         pcall(function()
             local toSave = {}
@@ -305,7 +305,7 @@ end
 
 
 function instantClone()
-    ShowNotification("CLONE", "Iniciando clonagem instantânea...")
+    ShowNotification("CLONE", "Iniciando clonagem...")
     if _G.isCloning then return end
     _G.isCloning = true
 
@@ -560,7 +560,7 @@ function applyTheme(themeName)
         if _G.rebuildAutoBuyCirclePresets then _G.rebuildAutoBuyCirclePresets() end
         if buildMiniActionsUI then
             local miniWasVis = _G.MiniActionsUI and _G.MiniActionsUI.panel and _G.MiniActionsUI.panel.Visible
-            -- buildMiniActionsUI()
+            buildMiniActionsUI()
             task.wait()
             if miniWasVis and _G.MiniActionsUI and _G.MiniActionsUI.panel then
                 _G.MiniActionsUI.panel.Visible = true
@@ -783,7 +783,7 @@ function AddMobileMinimizeAdmin(frame, labelText)
     end)
 end
 
-function ShowNotification(title, text)
+local function ShowNotification(title, text)
     pcall(function()
         local BullysNotif = PlayerGui:FindFirstChild("BullysNotif")
         if not BullysNotif then
@@ -1005,15 +1005,15 @@ Connections = {
     antiRagdollConn = nil,
     antiRagdollV2Task = nil,
 }
-local UI = {
+UI = {
     carpetStatusLabel = nil,
     settingsGui = nil,
 }
-local carpetSpeedEnabled = State.carpetSpeedEnabled
-local carpetSpeedConnection = Connections.carpetSpeedConnection
-local _carpetStatusLabel = UI.carpetStatusLabel
+carpetSpeedEnabled = State.carpetSpeedEnabled
+carpetSpeedConnection = Connections.carpetSpeedConnection
+_carpetStatusLabel = UI.carpetStatusLabel
 
-local function setCarpetSpeed(enabled)
+function setCarpetSpeed(enabled)
     State.carpetSpeedEnabled = enabled
     carpetSpeedEnabled = State.carpetSpeedEnabled
     if Connections.carpetSpeedConnection then Connections.carpetSpeedConnection:Disconnect(); Connections.carpetSpeedConnection = nil end
@@ -2040,7 +2040,7 @@ task.spawn(function()
                             if pp then
                                 local nameL = d.Name:lower()
                                 if nameL:find("podium", 1, true) or nameL:find("base", 1, true) or nameL:find("plotsign", 1, true) then
-                                   -- -- continue
+                                    -- continue
                                 end
                                 local score = 0
                                 if nameL == petNameNorm then
@@ -5680,6 +5680,7 @@ _G.runAutoSnipe = runAutoSnipe
 end)()
 
 local function executeReset()
+    ShowNotification("RESET", "Reiniciando...")
     ShowNotification("RESET", "Reiniciando personagem...")
     local plr = LocalPlayer
     if not plr then return end
@@ -10100,7 +10101,7 @@ function buildBullysSettingsUI()
     makeToggle(uhS,"Hide Auto Steal",function() return Config.HideAutoSteal end,function(v) Config.HideAutoSteal=v; SaveConfig(); local g=PlayerGui:FindFirstChild("AutoStealUI"); if g then g.Enabled=not v end end,12)
     makeToggle(uhS,"Hide Auto Buy UI",function() return Config.HideAutoBuyUI end,function(v) Config.HideAutoBuyUI=v; SaveConfig(); local g=PlayerGui:FindFirstChild("BullysAutoBuyUI"); if g then local p=g:FindFirstChild("ABPanel"); if p then p.Visible=not v end end end,13)
     makeToggle(uhS,"Hide Status HUD",function() return Config.HideStatusHUD end,function(v) Config.HideStatusHUD=v; SaveConfig(); local g=PlayerGui:FindFirstChild("BullysStatusHUD"); if g then g.Enabled=not v end end,15)
-    -- makeToggle(uhS,"Mostrar Mini UI",function() return Config.ShowMiniActions end,function(v) Config.ShowMiniActions=v; SaveConfig(); local g=PlayerGui:FindFirstChild("BullysMiniActions"); if g then local mp=g:FindFirstChild("MiniPanel"); if mp then mp.Visible=v end end end,19)
+    makeToggle(uhS,"Mostrar Mini UI",function() return Config.ShowMiniActions end,function(v) Config.ShowMiniActions=v; SaveConfig(); local g=PlayerGui:FindFirstChild("BullysMiniActions"); if g then local mp=g:FindFirstChild("MiniPanel"); if mp then mp.Visible=v end end end,19)
     makeToggle(uhS,"Auto Hide ao Iniciar",function() return Config.AutoHideMiniUI end,function(v) Config.AutoHideMiniUI=v; SaveConfig() end,20)
 
     -- ── INVIS TAB ──
@@ -10788,7 +10789,7 @@ task.spawn(function()
     end
 end)
 
--- function buildMiniActionsUI()
+function buildMiniActionsUI()
     local pg = PlayerGui
     if not pg then return end
     local oldG = pg:FindFirstChild("BullysMiniActions")
@@ -11610,7 +11611,7 @@ end)
                             local tl = t:lower()
                             if RARITY_WORDS[tl] then end
                             if t:match("^%$[%d%.]+[KkMmBb]?/s$") then
-                                if genFound=="" then genFound=t end;-- -- continue
+                                if genFound=="" then genFound=t end; -- continue
                             end
                             if t:match("^%$[%d%.]+[KkMmBb]?$") then end
                             if t:match("^[%d%.]+[KkMmBb]?$") then end
@@ -11838,14 +11839,14 @@ end)
                     lockedTarget=nil; lockedPart=nil; lockedModel=nil
                     stopCarpetLock()
                     destroyBodyPos()
-                   -- -- continue
+                    -- continue
                 end
                 if lockedPart or lockedModel then
                     if not partAlive() then
                         ShowNotification("AUTO BUY","📦 Reached base, scanning...")
                         lockedTarget=nil; lockedPart=nil; lockedModel=nil
                     end
-                   -- -- continue
+                    -- continue
                 end
                 local char = LocalPlayer.Character
                 local hrp  = char and char:FindFirstChild("HumanoidRootPart")
@@ -12506,7 +12507,7 @@ end)
 end
 
 task.spawn(function()
-    -- buildMiniActionsUI()
+    buildMiniActionsUI()
     -- Auto hide on start
     if Config.AutoHideMiniUI then
         local g = PlayerGui:FindFirstChild("BullysMiniActions")
