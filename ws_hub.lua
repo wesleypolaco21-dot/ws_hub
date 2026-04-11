@@ -1,8 +1,3 @@
--- ╔══════════════════════════════════════╗
--- ║         WS HUB  •  v1.7             ║
--- ║         @o_escolhido                ║
--- ╚══════════════════════════════════════╝
-do
 if not game:IsLoaded() then game.Loaded:Wait() end
 pcall(function() game:GetService("Players").RespawnTime = 0 end)
 pcall(function() if setfpscap then setfpscap(9999) end end)
@@ -208,7 +203,6 @@ DefaultConfig = {
     HideStatusHUD = false,
     HideInvisPanel = false,
     RaknetDesyncEnabled = false,
-    DesyncMode = "auto",
 }
 
 
@@ -280,11 +274,11 @@ function kickPlayer()
         if game.Shutdown then
             game:Shutdown()
         else
-            LocalPlayer:Kick("\nWS")
+            LocalPlayer:Kick("\nNOTZ HUB PRIVATE")
         end
     end)
     if not ok then
-        pcall(function() LocalPlayer:Kick("\nWS") end)
+        pcall(function() LocalPlayer:Kick("\nNOTZ HUB PRIVATE") end)
     end
 end
 
@@ -422,30 +416,30 @@ function triggerClosestUnlock(yLevel, maxY)
 end
 
 Theme = {
-    Background      = Color3.fromRGB(15, 15, 15),
-    Surface         = Color3.fromRGB(25, 25, 25),
-    SurfaceHighlight= Color3.fromRGB(45, 45, 45),
-    Accent1         = Color3.fromRGB(140, 140, 140),
-    Accent2         = Color3.fromRGB(90, 90, 90),
-    TextPrimary     = Color3.fromRGB(220, 220, 220),
-    TextSecondary   = Color3.fromRGB(160, 160, 160),
-    Success         = Color3.fromRGB(140, 140, 140),
-    Error           = Color3.fromRGB(180, 180, 180),
+    Background      = Color3.fromRGB(12, 5, 5),
+    Surface         = Color3.fromRGB(25, 8, 8),
+    SurfaceHighlight= Color3.fromRGB(45, 15, 15),
+    Accent1         = Color3.fromRGB(220, 50, 50),
+    Accent2         = Color3.fromRGB(160, 30, 30),
+    TextPrimary     = Color3.fromRGB(240, 220, 220),
+    TextSecondary   = Color3.fromRGB(200, 160, 160),
+    Success         = Color3.fromRGB(220, 50, 50),
+    Error           = Color3.fromRGB(255, 80, 80),
 }
 
 THEMES = {
     preto = {
-        Background       = Color3.fromRGB(15, 15, 15),
-        Surface          = Color3.fromRGB(25, 25, 25),
-        SurfaceHighlight = Color3.fromRGB(45, 45, 45),
-        Accent1          = Color3.fromRGB(140, 140, 140),
-        Accent2          = Color3.fromRGB(90, 90, 90),
-        TextPrimary      = Color3.fromRGB(220, 220, 220),
-        TextSecondary    = Color3.fromRGB(160, 160, 160),
-        Success          = Color3.fromRGB(140, 140, 140),
-        Error            = Color3.fromRGB(180, 180, 180),
-        GlowColor1       = Color3.fromRGB(140, 140, 140),
-        GlowColor2       = Color3.fromRGB(90, 90, 90),
+        Background       = Color3.fromRGB(12, 5, 5),
+        Surface          = Color3.fromRGB(25, 8, 8),
+        SurfaceHighlight = Color3.fromRGB(45, 15, 15),
+        Accent1          = Color3.fromRGB(220, 50, 50),
+        Accent2          = Color3.fromRGB(160, 30, 30),
+        TextPrimary      = Color3.fromRGB(240, 220, 220),
+        TextSecondary    = Color3.fromRGB(200, 160, 160),
+        Success          = Color3.fromRGB(220, 50, 50),
+        Error            = Color3.fromRGB(255, 80, 80),
+        GlowColor1       = Color3.fromRGB(220, 50, 50),
+        GlowColor2       = Color3.fromRGB(160, 30, 30),
     },
 }
 
@@ -564,7 +558,7 @@ function applyTheme(themeName)
         if _G.rebuildAutoBuyCirclePresets then _G.rebuildAutoBuyCirclePresets() end
         if buildMiniActionsUI then
             local miniWasVis = _G.MiniActionsUI and _G.MiniActionsUI.panel and _G.MiniActionsUI.panel.Visible
-            buildMiniActionsUI()
+            -- buildMiniActionsUI()
             task.wait()
             if miniWasVis and _G.MiniActionsUI and _G.MiniActionsUI.panel then
                 _G.MiniActionsUI.panel.Visible = true
@@ -593,7 +587,7 @@ function applyTheme(themeName)
     end)
 
     if ShowNotification then
-    ShowNotification("tema", themeName)
+    ShowNotification("TEMA", "Tema " .. themeName .. " aplicado!")
 end
 end
 
@@ -787,101 +781,7 @@ local function AddMobileMinimizeAdmin(frame, labelText)
     end)
 end
 
--- ── WS NOTIFICATION SYSTEM ──────────────────────────────────────
-local _notifGui = nil
-local _notifQueue = {}
-local _notifRunning = false
-
-local function _getNotifGui()
-    if _notifGui and _notifGui.Parent then return _notifGui end
-    local sg = Instance.new("ScreenGui")
-    sg.Name = "BullysNotif"
-    sg.ResetOnSpawn = false
-    sg.IgnoreGuiInset = true
-    sg.DisplayOrder = 999
-    sg.Parent = PlayerGui
-    _notifGui = sg
-    return sg
-end
-
-local function _processNotifQueue()
-    if _notifRunning then return end
-    if #_notifQueue == 0 then return end
-    _notifRunning = true
-
-    local data = table.remove(_notifQueue, 1)
-    local gui = _getNotifGui()
-
-    local frame = Instance.new("Frame")
-    frame.Name = "NotifFrame"
-    frame.AnchorPoint = Vector2.new(0.5, 0)
-    frame.Position = UDim2.new(0.5, 0, 0, -60)
-    frame.Size = UDim2.new(0, 210, 0, 42)
-    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    frame.BackgroundTransparency = 0.1
-    frame.BorderSizePixel = 0
-    frame.Parent = gui
-
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 21)
-
-    local stroke = Instance.new("UIStroke", frame)
-    stroke.Color = Color3.fromRGB(55, 55, 55)
-    stroke.Thickness = 1
-    stroke.Transparency = 0.1
-
-    local titleLbl = Instance.new("TextLabel")
-    titleLbl.Name = "Title"
-    titleLbl.Size = UDim2.new(1, -20, 0, 13)
-    titleLbl.Position = UDim2.new(0, 10, 0, 5)
-    titleLbl.BackgroundTransparency = 1
-    titleLbl.Font = Enum.Font.GothamMedium
-    titleLbl.TextSize = 9
-    titleLbl.TextColor3 = Color3.fromRGB(95, 95, 95)
-    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    titleLbl.TextTruncate = Enum.TextTruncate.AtEnd
-    titleLbl.Text = (data.title or ""):upper()
-    titleLbl.Parent = frame
-
-    local msgLbl = Instance.new("TextLabel")
-    msgLbl.Name = "Msg"
-    msgLbl.Size = UDim2.new(1, -20, 0, 17)
-    msgLbl.Position = UDim2.new(0, 10, 0, 18)
-    msgLbl.BackgroundTransparency = 1
-    msgLbl.Font = Enum.Font.GothamBold
-    msgLbl.TextSize = 12
-    msgLbl.TextColor3 = Color3.fromRGB(205, 205, 205)
-    msgLbl.TextXAlignment = Enum.TextXAlignment.Left
-    msgLbl.TextTruncate = Enum.TextTruncate.AtEnd
-    msgLbl.Text = data.text or ""
-    msgLbl.Parent = frame
-
-    local tweenIn = TweenService:Create(frame,
-        TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        {Position = UDim2.new(0.5, 0, 0, 10), BackgroundTransparency = 0.1}
-    )
-    tweenIn:Play()
-
-    local duration = data.duration or 2.2
-
-    task.delay(duration, function()
-        local tweenOut = TweenService:Create(frame,
-            TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-            {Position = UDim2.new(0.5, 0, 0, -60), BackgroundTransparency = 1}
-        )
-        tweenOut:Play()
-        tweenOut.Completed:Connect(function()
-            pcall(function() frame:Destroy() end)
-            _notifRunning = false
-            _processNotifQueue()
-        end)
-    end)
-end
-
-local function ShowNotification(title, text, duration)
-    table.insert(_notifQueue, {title = title or "", text = text or "", duration = duration or 2.8})
-    _processNotifQueue()
-end
--- ── FIM NOTIFICATION SYSTEM ─────────────────────────────────────
+local function ShowNotification(title, text) end
 
 local function isPlayerCharacter(model)
     return Players:GetPlayerFromCharacter(model) ~= nil
@@ -2086,7 +1986,7 @@ task.spawn(function()
                             if pp then
                                 local nameL = d.Name:lower()
                                 if nameL:find("podium", 1, true) or nameL:find("base", 1, true) or nameL:find("plotsign", 1, true) then
-                                    -- continue
+                                   -- -- continue
                                 end
                                 local score = 0
                                 if nameL == petNameNorm then
@@ -2638,9 +2538,6 @@ task.spawn(function()
         local ct = allPets and allPets[selectedTargetIndex]
         local prevUID = SharedState.SelectedPetData and SharedState.SelectedPetData.uid
         SharedState.SelectedPetData = ct
-        if ct and ct.uid ~= prevUID then
-            ShowNotification("alvo", (ct.petName or ct.name or "?") .. "  ·  " .. (ct.owner or "?"))
-        end
         local newUID = ct and ct.uid
         if Config.AutoBack and _G.startAutoBack and _G.stopAutoBack and newUID ~= prevUID then
             pcall(function()
@@ -2673,7 +2570,6 @@ task.spawn(function()
         autoStealEnabled = true
         SharedState.ListNeedsRedraw = false
         updateUI(true, get_all_pets())
-        ShowNotification("auto steal", "ativado")
     end)
     
     nearestBtn.MouseButton1Click:Connect(function()
@@ -2682,7 +2578,6 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
-        ShowNotification("modo", "nearest")
     end)
 
     highestBtn.MouseButton1Click:Connect(function()
@@ -2691,7 +2586,6 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
-        ShowNotification("modo", "highest")
     end)
 
     priorityBtn.MouseButton1Click:Connect(function()
@@ -2700,7 +2594,6 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
-        ShowNotification("modo", "priority")
     end)
 
     -- Expose steal mode state + toggle for the mini bar
@@ -5359,15 +5252,13 @@ local function runAutoSnipe()
             end
         end
         if bestEntry then targetPetData=bestEntry
-            ShowNotification("tp", bestEntry.name .. "  ·  " .. (bestEntry.owner or "?"))
         else
-            if not SharedState.SelectedPetData then ShowNotification("aviso", "sem alvo"); return end
+            if not SharedState.SelectedPetData then ShowNotification("ERROR","No target selected!"); return end
             targetPetData=SharedState.SelectedPetData.animalData
         end
     else
         if not SharedState.SelectedPetData then ShowNotification("ERROR","No target selected!"); return end
         targetPetData = SharedState.SelectedPetData.animalData
-        ShowNotification("tp", targetPetData and (targetPetData.name or "?") or "?")
     end
     if not targetPetData then return end
 
@@ -5735,7 +5626,7 @@ _G.runAutoSnipe = runAutoSnipe
 end)()
 
 local function executeReset()
-    ShowNotification("reset", "reiniciando...")
+    ShowNotification("RESET", "Reiniciando personagem...")
     local plr = LocalPlayer
     if not plr then return end
 
@@ -5845,7 +5736,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
             _carpetStatusLabel.Text = carpetSpeedEnabled and "ON" or "OFF"
             _carpetStatusLabel.TextColor3 = carpetSpeedEnabled and Theme.Success or Theme.Error
         end
-        ShowNotification("carpet", carpetSpeedEnabled and Config.TpSettings.Tool or "desligado")
+        ShowNotification("CARPET SPEED", carpetSpeedEnabled and ("ON  |  "..Config.TpSettings.Tool.."  |  140") or "OFF")
     end
 
     if input.KeyCode == stealSpeedKey then
@@ -5982,7 +5873,7 @@ end
 CreateRow("Auto TP on Script Load")
 CreateToggleSwitch(sList:FindFirstChildOfClass("Frame"), Config.TpSettings.TpOnLoad, function(ns, set)
     set(ns); Config.TpSettings.TpOnLoad = ns; SaveConfig()
-    ShowNotification("auto tp", ns and "ativado" or "desativado")
+    ShowNotification("AUTO TP ON LOAD", ns and "ENABLED" or "DISABLED")
 end)
 
 local rMinGen = CreateRow("Min Gen for Auto TP")
@@ -6006,26 +5897,26 @@ end)
 local rFPS = CreateRow("FPS Boost")
 CreateToggleSwitch(rFPS, Config.FPSBoost, function(ns, set)
     set(ns); setFPSBoost(ns)
-    ShowNotification("fps boost", ns and "ativado" or "desativado")
+    ShowNotification("FPS BOOST", ns and "ENABLED" or "DISABLED")
 end)
 
 local rTrace = CreateRow("Tracer Best Brainrot")
 CreateToggleSwitch(rTrace, Config.TracerEnabled, function(ns, set)
     set(ns); Config.TracerEnabled = ns; SaveConfig()
-    ShowNotification("tracer", ns and "ativado" or "desativado")
+    ShowNotification("TRACER", ns and "ENABLED" or "DISABLED")
 end)
 
 local rLineToBase = CreateRow("Line to base")
 CreateToggleSwitch(rLineToBase, Config.LineToBase, function(ns, set)
     set(ns); Config.LineToBase = ns; SaveConfig()
     if not ns and _G.resetPlotBeam then pcall(_G.resetPlotBeam) end
-    ShowNotification("linha", ns and "ativado" or "desativado")
+    ShowNotification("LINE TO BASE", ns and "ENABLED" or "DISABLED")
 end)
 
 local rXray = CreateRow("X-Ray")
 CreateToggleSwitch(rXray, Config.XrayEnabled, function(ns, set)
     set(ns); Config.XrayEnabled = ns; if ns then enableXray() else disableXray() end; SaveConfig()
-    ShowNotification("x-ray", ns and "ativado" or "desativado")
+    ShowNotification("X-RAY", ns and "ENABLED" or "DISABLED")
 end)
 
 CreateSectionHeader("Auto TP")
@@ -6037,7 +5928,7 @@ for _, toolName in ipairs(toolOptions) do
         if rs then
             Config.TpSettings.Tool=toolName; SaveConfig(); set(true)
             for n, sw in pairs(toolSwitches) do if n~=toolName then sw.Set(false) end end
-            ShowNotification("ferramenta", toolName)
+            ShowNotification("TP TOOL", toolName)
         else
             set(Config.TpSettings.Tool==toolName)
         end
@@ -6063,7 +5954,7 @@ for i = 1, 4 do
             local a=(idx==i); btn.BackgroundColor3=a and Theme.Accent1 or Theme.SurfaceHighlight
             btn.TextColor3=a and Color3.new(0,0,0) or Theme.TextPrimary
         end
-        ShowNotification("velocidade tp", tostring(i))
+        ShowNotification("TP SPEED", "Set to " .. tostring(i))
     end)
     table.insert(speedBtns,b)
 end
@@ -6829,8 +6720,6 @@ LocalPlayer:GetAttributeChangedSignal("Stealing"):Connect(function()
     local wasStealing = not isStealing 
 
     if isStealing then
-        local petName = tostring(LocalPlayer:GetAttribute("StealingIndex") or "?")
-        ShowNotification("roubo", petName)
         if Config.AutoInvisDuringSteal and _G.toggleInvisibleSteal and not _G.invisibleStealEnabled then
             _G.toggleInvisibleSteal()
         end
@@ -6838,7 +6727,6 @@ LocalPlayer:GetAttributeChangedSignal("Stealing"):Connect(function()
             triggerClosestUnlock(nil, 19)
         end
     elseif wasStealing then
-        
         if Config.AutoInvisDuringSteal and _G.toggleInvisibleSteal and _G.invisibleStealEnabled then
             _G.toggleInvisibleSteal()
         end
@@ -7923,7 +7811,7 @@ task.spawn(function()
         title.Size = UDim2.new(0, 110, 1, 0)
         title.Position = UDim2.new(0, 18, 0, 0)
         title.BackgroundTransparency = 1
-        title.Text = "WS"
+        title.Text = "NOTZ HUB PRIVATE"
         title.Font = Enum.Font.GothamBlack
         title.TextSize = 14
         title.TextColor3 = Theme.TextPrimary
@@ -7934,7 +7822,7 @@ task.spawn(function()
         authors.Size = UDim2.new(0, 150, 1, 0)
         authors.Position = UDim2.new(0, 122, 0, 0)
         authors.BackgroundTransparency = 1
-        authors.Text = "@o_escolhido  •  v1.7"
+        authors.Text = "@branc"
         authors.Font = Enum.Font.GothamBold
         authors.TextSize = 10
         authors.TextColor3 = Theme.TextSecondary
@@ -8172,385 +8060,6 @@ task.spawn(function()
     end
 end)
 
--- ── TEAM ESP + PLAYER OUTLINE ────────────────────────────────────
-task.spawn(function()
-    local TeamService = pcall(function() return game:GetService("Teams") end) and game:GetService("Teams") or nil
-    local highlightFolder = Instance.new("Folder")
-    highlightFolder.Name = "WSTeamESP"
-    highlightFolder.Parent = PlayerGui
-
-    local TEAM_COLORS = {}
-    local COLOR_PALETTE = {
-        Color3.fromRGB(80,180,255),
-        Color3.fromRGB(255,120,80),
-        Color3.fromRGB(80,255,140),
-        Color3.fromRGB(255,220,60),
-        Color3.fromRGB(200,80,255),
-        Color3.fromRGB(255,80,160),
-        Color3.fromRGB(60,220,220),
-        Color3.fromRGB(255,160,40),
-    }
-    local colorIndex = 0
-    local function getTeamColor(player)
-        if player.Team and player.Team.TeamColor then
-            local tc = player.Team.TeamColor.Color
-            return tc
-        end
-        if not TEAM_COLORS[player.UserId] then
-            colorIndex = (colorIndex % #COLOR_PALETTE) + 1
-            TEAM_COLORS[player.UserId] = COLOR_PALETTE[colorIndex]
-        end
-        return TEAM_COLORS[player.UserId]
-    end
-
-    local _highlights = {}
-
-    local function applyOutline(player)
-        if player == LocalPlayer then return end
-        local char = player.Character
-        if not char then return end
-        local uid = player.UserId
-        local hl = _highlights[uid]
-        if hl and hl.Parent then
-            hl.Adornee = char
-            hl.FillColor = getTeamColor(player)
-            hl.OutlineColor = getTeamColor(player)
-            return
-        end
-        local newHl = Instance.new("Highlight")
-        newHl.Name = "WSOutline_"..player.Name
-        newHl.Adornee = char
-        newHl.FillColor = getTeamColor(player)
-        newHl.FillTransparency = 0.97
-        newHl.OutlineColor = getTeamColor(player)
-        newHl.OutlineTransparency = 0.15
-        newHl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        newHl.Parent = highlightFolder
-        _highlights[uid] = newHl
-    end
-
-    local function removeOutline(player)
-        local hl = _highlights[player.UserId]
-        if hl then pcall(function() hl:Destroy() end) end
-        _highlights[player.UserId] = nil
-    end
-
-    Players.PlayerRemoving:Connect(removeOutline)
-
-    while true do
-        task.wait(0.6)
-        if Config.PlayerESP then
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr ~= LocalPlayer then
-                    pcall(applyOutline, plr)
-                end
-            end
-        else
-            for uid, hl in pairs(_highlights) do
-                pcall(function() hl:Destroy() end)
-                _highlights[uid] = nil
-            end
-        end
-    end
-end)
-
--- ── MINI DESYNC GUI ──────────────────────────────────────────────
-do
-    local miniDsyGui = Instance.new("ScreenGui")
-    miniDsyGui.Name = "WSMiniDesync"
-    miniDsyGui.ResetOnSpawn = false
-    miniDsyGui.IgnoreGuiInset = true
-    miniDsyGui.DisplayOrder = 50
-    miniDsyGui.Parent = PlayerGui
-
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 90, 0, 30)
-    btn.Position = UDim2.new(0, 8, 0.5, 0)
-    btn.AnchorPoint = Vector2.new(0, 0.5)
-    btn.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
-    btn.BorderSizePixel = 0
-    btn.Font = Enum.Font.GothamBlack
-    btn.TextSize = 11
-    btn.AutoButtonColor = false
-    btn.Parent = miniDsyGui
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 15)
-    local dsyStroke = Instance.new("UIStroke", btn)
-    dsyStroke.Thickness = 1.2
-    dsyStroke.Transparency = 0.3
-
-    local function updateDsyBtn()
-        local on = _G.getRaknetDesync and _G.getRaknetDesync()
-        btn.Text = on and "🔴 DESYNC ON" or "⚫ DESYNC OFF"
-        btn.TextColor3 = on and Color3.fromRGB(220,220,220) or Color3.fromRGB(120,120,120)
-        dsyStroke.Color = on and Color3.fromRGB(180,80,80) or Color3.fromRGB(70,70,70)
-    end
-    updateDsyBtn()
-
-    -- Arrastar
-    local dragging, dragStart, startPos = false, nil, nil
-    btn.InputBegan:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = inp.Position
-            startPos = btn.Position
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(inp)
-        if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
-            local delta = inp.Position - dragStart
-            btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-            local delta = inp.Position - dragStart
-            if math.abs(delta.X) < 5 and math.abs(delta.Y) < 5 then
-                if _G.setRaknetDesync then
-                    _G.setRaknetDesync(not (_G.getRaknetDesync and _G.getRaknetDesync()))
-                    updateDsyBtn()
-                end
-            end
-            dragging = false
-        end
-    end)
-end
-
--- ── QUICK ACTIONS GUI v2 ─────────────────────────────────────────
-do
-    -- Todas as ações disponíveis
-    local ALL_ACTIONS = {
-        {id="tp_best",   label="TP Melhor",   fn=function() pcall(function() if _G.tpToBestBrainrot then _G.tpToBestBrainrot() end end); ShowNotification("QUICK","TP melhor base") end},
-        {id="tp_home",   label="TP Home",     fn=function()
-            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            local Plots2 = Workspace:FindFirstChild("Plots")
-            if hrp and Plots2 then
-                for _, plot in ipairs(Plots2:GetChildren()) do
-                    local sign = plot:FindFirstChild("PlotSign")
-                    local base = plot:FindFirstChild("DeliveryHitbox")
-                    if sign and sign:FindFirstChild("YourBase") and sign.YourBase.Enabled and base then
-                        hrp.CFrame = CFrame.new(base.Position + Vector3.new(0,5,0))
-                        ShowNotification("tp", "sua base"); return
-                    end
-                end
-            end
-            ShowNotification("tp", "base não encontrada")
-        end},
-        {id="carpet",    label="Carpet TP",   fn=function() if _G.tpToBestBrainrot then pcall(_G.tpToBestBrainrot) end;  end},
-        {id="kick",      label="Kick",        fn=function() pcall(kickPlayer); ShowNotification("kick", "enviado") end},
-        {id="rejoin",    label="Rejoin",      fn=function() pcall(function() TeleportService:Teleport(game.PlaceId,LocalPlayer) end); ShowNotification("rejoin", "reconectando...") end},
-        {id="esp",       label="ESP",         fn=function() Config.PlayerESP=not Config.PlayerESP; SaveConfig(); ShowNotification("esp", Config.PlayerESP and "ativado" or "desativado") end},
-        {id="desync",    label="Desync",      fn=function() if _G.setRaknetDesync then _G.setRaknetDesync(not (_G.getRaknetDesync and _G.getRaknetDesync())) end end},
-        {id="autosteal", label="Auto Steal",  fn=function()
-            local v = not Config.AutoBack; Config.AutoBack = v; SaveConfig()
-            ShowNotification("auto steal", v and "ativado" or "desativado")
-        end},
-        {id="invis",     label="Invis",       fn=function() _G.invisibleStealEnabled = not _G.invisibleStealEnabled; ShowNotification("invis", _G.invisibleStealEnabled and "ativado" or "desativado") end},
-        {id="fps",       label="FPS Boost",   fn=function() Config.FPSBoost=not Config.FPSBoost; SaveConfig(); ShowNotification("fps boost", Config.FPSBoost and "ativado" or "desativado") end},
-    }
-
-    -- Config: quais IDs estão ativos no painel (salvo no Config)
-    if type(Config.QuickPanelItems) ~= "table" then
-        Config.QuickPanelItems = {"tp_best","tp_home","kick","rejoin","desync","autosteal"}
-    end
-
-    local qaGui = Instance.new("ScreenGui")
-    qaGui.Name = "WSQuickActions"
-    qaGui.ResetOnSpawn = false
-    qaGui.IgnoreGuiInset = true
-    qaGui.DisplayOrder = 49
-    qaGui.Parent = PlayerGui
-
-    local COL = 2
-    local BTN_W, BTN_H, GAP, PAD = 62, 44, 6, 8
-    local HEADER_H = 30
-
-    local panel = Instance.new("Frame")
-    panel.Name = "QAPanel"
-    panel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    panel.BackgroundTransparency = 0.06
-    panel.BorderSizePixel = 0
-    panel.Position = UDim2.new(1, -(COL*(BTN_W+GAP)+PAD*2+4), 0.28, 0)
-    panel.Parent = qaGui
-    Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 14)
-    local pStroke = Instance.new("UIStroke", panel)
-    pStroke.Color = Color3.fromRGB(65,65,65); pStroke.Thickness = 1; pStroke.Transparency = 0.2
-
-    -- Header drag
-    local header = Instance.new("Frame")
-    header.Size = UDim2.new(1,0,0,HEADER_H)
-    header.BackgroundTransparency = 1
-    header.BorderSizePixel = 0
-    header.Parent = panel
-
-    local titleLbl = Instance.new("TextLabel", header)
-    titleLbl.Size = UDim2.new(1,-36,1,0)
-    titleLbl.Position = UDim2.new(0,PAD,0,0)
-    titleLbl.BackgroundTransparency = 1
-    titleLbl.Font = Enum.Font.GothamBlack
-    titleLbl.TextSize = 11
-    titleLbl.TextColor3 = Color3.fromRGB(180,180,180)
-    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    titleLbl.Text = "QUICK ACTIONS"
-
-    -- Botão configurar (engrenagem)
-    local cfgBtn = Instance.new("TextButton", header)
-    cfgBtn.Size = UDim2.new(0,24,0,24)
-    cfgBtn.Position = UDim2.new(1,-PAD-24, 0.5,-12)
-    cfgBtn.BackgroundColor3 = Color3.fromRGB(38,38,38)
-    cfgBtn.BorderSizePixel = 0
-    cfgBtn.Font = Enum.Font.GothamBold
-    cfgBtn.TextSize = 13
-    cfgBtn.TextColor3 = Color3.fromRGB(140,140,140)
-    cfgBtn.Text = "+"
-    cfgBtn.AutoButtonColor = false
-    Instance.new("UICorner", cfgBtn).CornerRadius = UDim.new(0,6)
-
-    -- Grid de botões
-    local gridFrame = Instance.new("Frame")
-    gridFrame.BackgroundTransparency = 1
-    gridFrame.BorderSizePixel = 0
-    gridFrame.Position = UDim2.new(0, PAD, 0, HEADER_H)
-    gridFrame.Parent = panel
-
-    local function rebuildGrid()
-        for _, c in ipairs(gridFrame:GetChildren()) do c:Destroy() end
-        local active = {}
-        for _, id in ipairs(Config.QuickPanelItems) do
-            for _, a in ipairs(ALL_ACTIONS) do
-                if a.id == id then table.insert(active, a); break end
-            end
-        end
-        local rows = math.ceil(#active / COL)
-        gridFrame.Size = UDim2.new(0, COL*(BTN_W+GAP)-GAP, 0, rows*(BTN_H+GAP)-GAP)
-        panel.Size = UDim2.new(0, COL*(BTN_W+GAP)-GAP+PAD*2, 0, HEADER_H + rows*(BTN_H+GAP)-GAP + PAD)
-
-        for i, action in ipairs(active) do
-            local col = (i-1) % COL
-            local row = math.floor((i-1) / COL)
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0,BTN_W,0,BTN_H)
-            btn.Position = UDim2.new(0, col*(BTN_W+GAP), 0, row*(BTN_H+GAP))
-            btn.BackgroundColor3 = Color3.fromRGB(32,32,32)
-            btn.BorderSizePixel = 0
-            btn.Font = Enum.Font.GothamBold
-            btn.TextSize = 10
-            btn.TextColor3 = Color3.fromRGB(190,190,190)
-            btn.Text = action.label
-            btn.AutoButtonColor = false
-            btn.Parent = gridFrame
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
-            local bStroke = Instance.new("UIStroke", btn)
-            bStroke.Color = Color3.fromRGB(55,55,55); bStroke.Thickness = 1; bStroke.Transparency = 0.3
-
-            local function press()
-                TweenService:Create(btn,TweenInfo.new(0.07),{BackgroundColor3=Color3.fromRGB(55,55,55)}):Play()
-                task.delay(0.15,function() TweenService:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(32,32,32)}):Play() end)
-                pcall(action.fn)
-            end
-            btn.MouseButton1Click:Connect(press)
-            btn.InputBegan:Connect(function(inp) if inp.UserInputType==Enum.UserInputType.Touch then press() end end)
-        end
-    end
-    rebuildGrid()
-
-    -- Painel de configuração
-    local cfgPanel = Instance.new("Frame")
-    cfgPanel.Size = UDim2.new(0, 200, 0, #ALL_ACTIONS*30+44)
-    cfgPanel.BackgroundColor3 = Color3.fromRGB(18,18,18)
-    cfgPanel.BackgroundTransparency = 0.04
-    cfgPanel.BorderSizePixel = 0
-    cfgPanel.Visible = false
-    cfgPanel.ZIndex = 10
-    cfgPanel.Parent = qaGui
-    Instance.new("UICorner", cfgPanel).CornerRadius = UDim.new(0,12)
-    local cfgStroke = Instance.new("UIStroke", cfgPanel)
-    cfgStroke.Color = Color3.fromRGB(70,70,70); cfgStroke.Thickness = 1
-
-    local cfgTitle = Instance.new("TextLabel", cfgPanel)
-    cfgTitle.Size = UDim2.new(1,0,0,34)
-    cfgTitle.BackgroundTransparency = 1
-    cfgTitle.Font = Enum.Font.GothamBlack
-    cfgTitle.TextSize = 11
-    cfgTitle.TextColor3 = Color3.fromRGB(180,180,180)
-    cfgTitle.Text = "CONFIGURAR PAINEL"
-
-    local function buildCfgPanel()
-        for _, c in ipairs(cfgPanel:GetChildren()) do
-            if c.Name:sub(1,7) == "cfgItem" then c:Destroy() end
-        end
-        for i, action in ipairs(ALL_ACTIONS) do
-            local isOn = false
-            for _, id in ipairs(Config.QuickPanelItems) do if id==action.id then isOn=true; break end end
-
-            local row = Instance.new("TextButton")
-            row.Name = "cfgItem_"..action.id
-            row.Size = UDim2.new(1,-16,0,26)
-            row.Position = UDim2.new(0,8,0,34+(i-1)*29)
-            row.BackgroundColor3 = isOn and Color3.fromRGB(45,45,45) or Color3.fromRGB(28,28,28)
-            row.BorderSizePixel = 0
-            row.Font = Enum.Font.GothamBold
-            row.TextSize = 10
-            row.TextColor3 = isOn and Color3.fromRGB(210,210,210) or Color3.fromRGB(100,100,100)
-            row.Text = (isOn and "  [X]  " or "  [ ]  ") .. action.label
-            row.TextXAlignment = Enum.TextXAlignment.Left
-            row.AutoButtonColor = false
-            row.ZIndex = 11
-            Instance.new("UICorner", row).CornerRadius = UDim.new(0,6)
-            row.Parent = cfgPanel
-
-            row.MouseButton1Click:Connect(function()
-                if isOn then
-                    local newList = {}
-                    for _, id in ipairs(Config.QuickPanelItems) do
-                        if id ~= action.id then table.insert(newList, id) end
-                    end
-                    Config.QuickPanelItems = newList
-                else
-                    table.insert(Config.QuickPanelItems, action.id)
-                end
-                SaveConfig()
-                rebuildGrid()
-                buildCfgPanel()
-            end)
-            row.InputBegan:Connect(function(inp)
-                if inp.UserInputType == Enum.UserInputType.Touch then row.MouseButton1Click:Fire() end
-            end)
-        end
-    end
-    buildCfgPanel()
-
-    cfgBtn.MouseButton1Click:Connect(function()
-        cfgPanel.Visible = not cfgPanel.Visible
-        if cfgPanel.Visible then
-            local pp = panel.AbsolutePosition
-            cfgPanel.Position = UDim2.new(0, pp.X - 210, 0, pp.Y)
-        end
-    end)
-    cfgBtn.InputBegan:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.Touch then cfgBtn.MouseButton1Click:Fire() end
-    end)
-
-    -- Drag do panel principal
-    local qaDrag, qaStart, qaPosStart = false, nil, nil
-    header.InputBegan:Connect(function(inp)
-        if inp.UserInputType==Enum.UserInputType.MouseButton1 or inp.UserInputType==Enum.UserInputType.Touch then
-            qaDrag=true; qaStart=inp.Position; qaPosStart=panel.Position
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(inp)
-        if qaDrag and (inp.UserInputType==Enum.UserInputType.MouseMovement or inp.UserInputType==Enum.UserInputType.Touch) then
-            local d=inp.Position-qaStart
-            panel.Position=UDim2.new(qaPosStart.X.Scale,qaPosStart.X.Offset+d.X,qaPosStart.Y.Scale,qaPosStart.Y.Offset+d.Y)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(inp)
-        if inp.UserInputType==Enum.UserInputType.MouseButton1 or inp.UserInputType==Enum.UserInputType.Touch then
-            qaDrag=false
-        end
-    end)
-end
--- ── FIM QUICK ACTIONS v2 ─────────────────────────────────────────
-
 task.spawn(function()
     local function makeBlacklistESP(player)
         local char = player.Character
@@ -8592,7 +8101,7 @@ task.spawn(function()
         lbl.Text                 = "🚫 " .. msg
         lbl.Font                 = Enum.Font.GothamBlack
         lbl.TextSize             = 11
-        lbl.TextColor3           = Theme.Error or Color3.fromRGB(180, 180, 180)
+        lbl.TextColor3           = Theme.Error or Color3.fromRGB(255, 80, 80)
         lbl.TextStrokeTransparency = 0.5
         lbl.TextStrokeColor3     = Color3.fromRGB(0, 0, 0)
         lbl.TextXAlignment       = Enum.TextXAlignment.Center
@@ -9129,7 +8638,7 @@ task.spawn(function()
     
     saveBtn.MouseButton1Click:Connect(function()
         savePriorityToConfig()
-        ShowNotification("priority", #PRIORITY_LIST .. " pets salvos")
+        ShowNotification("PRIORITY LIST", "Saved " .. #PRIORITY_LIST .. " pets!")
         local successLabel = Instance.new("TextLabel", mainFrame)
         successLabel.Size = UDim2.new(0, 200, 0, 30)
         successLabel.Position = UDim2.new(0.5, -100, 1, -80)
@@ -9329,7 +8838,7 @@ task.spawn(function()
 
     SendWebhook(name, gen, mut)
                 if Config.AutoTpOnFailedSteal and stealDuration > 3 and distanceMoved > 60 then
-                    ShowNotification("roubo", "falhou · retentando")
+                    ShowNotification("STEAL FAILED", string.format("Auto TPing... (%.1fs, %d studs)", stealDuration, distanceMoved))
                     task.spawn(runAutoSnipe)
                 end
             end
@@ -9656,7 +9165,7 @@ task.spawn(function()
             isJoining = false
             joinBtn.Text = "JOIN"
             joinBtn.BackgroundColor3 = HTheme.Success
-            ShowNotification("joiner", "cancelado")
+            ShowNotification("JOINER", "Process Cancelled")
             return
         end
 
@@ -9665,7 +9174,7 @@ task.spawn(function()
         local delayTime = tonumber(delBox.Text) or 0.5
 
         if jobId == "" or #jobId < 5 then
-            ShowNotification("erro", "job id inválido")
+            ShowNotification("ERROR", "Invalid JobID")
             return
         end
 
@@ -9978,7 +9487,7 @@ function buildBullysSettingsUI()
     hTitle.Size = UDim2.new(0, 120, 1, 0)
     hTitle.Position = UDim2.new(0, 12, 0, 0)
     hTitle.BackgroundTransparency = 1
-    hTitle.Text = "WS"
+    hTitle.Text = "NOTZ HUB PRIVATE"
     hTitle.Font = Enum.Font.GothamBlack
     hTitle.TextSize = 16
     hTitle.TextColor3 = C().TP
@@ -10362,7 +9871,7 @@ function buildBullysSettingsUI()
                 TweenService:Create(_sw.dot, TweenInfo.new(0.15), {Position = _on and UDim2.new(1,-17,0.5,-7.5) or UDim2.new(0,2,0.5,-7.5)}):Play()
                 TweenService:Create(_sw.bg,  TweenInfo.new(0.15), {BackgroundColor3 = _on and Theme.Accent1 or Theme.SurfaceHighlight}):Play()
             end
-            ShowNotification("modo", mode)
+            ShowNotification("STEAL MODE", "Steal " .. mode:sub(1,1):upper() .. mode:sub(2) .. " ENABLED")
         end
         local function makeStealRadio(parent, label, id, order)
             local isOn = (id=="nearest"  and Config.StealNearest)
@@ -10537,7 +10046,7 @@ function buildBullysSettingsUI()
     makeToggle(uhS,"Hide Auto Steal",function() return Config.HideAutoSteal end,function(v) Config.HideAutoSteal=v; SaveConfig(); local g=PlayerGui:FindFirstChild("AutoStealUI"); if g then g.Enabled=not v end end,12)
     makeToggle(uhS,"Hide Auto Buy UI",function() return Config.HideAutoBuyUI end,function(v) Config.HideAutoBuyUI=v; SaveConfig(); local g=PlayerGui:FindFirstChild("BullysAutoBuyUI"); if g then local p=g:FindFirstChild("ABPanel"); if p then p.Visible=not v end end end,13)
     makeToggle(uhS,"Hide Status HUD",function() return Config.HideStatusHUD end,function(v) Config.HideStatusHUD=v; SaveConfig(); local g=PlayerGui:FindFirstChild("BullysStatusHUD"); if g then g.Enabled=not v end end,15)
-    makeToggle(uhS,"Mostrar Mini UI",function() return Config.ShowMiniActions end,function(v) Config.ShowMiniActions=v; SaveConfig(); local g=PlayerGui:FindFirstChild("BullysMiniActions"); if g then local mp=g:FindFirstChild("MiniPanel"); if mp then mp.Visible=v end end end,19)
+    -- makeToggle(uhS,"Mostrar Mini UI",function() return Config.ShowMiniActions end,function(v) Config.ShowMiniActions=v; SaveConfig(); local g=PlayerGui:FindFirstChild("BullysMiniActions"); if g then local mp=g:FindFirstChild("MiniPanel"); if mp then mp.Visible=v end end end,19)
     makeToggle(uhS,"Auto Hide ao Iniciar",function() return Config.AutoHideMiniUI end,function(v) Config.AutoHideMiniUI=v; SaveConfig() end,20)
 
     -- ── INVIS TAB ──
@@ -10895,7 +10404,7 @@ function buildBullysSettingsUI()
             remBtn.MouseButton1Click:Connect(function()
                 pcall(function()
                     removeFromBlacklist(n)
-                    ShowNotification("blacklist", "removido · " .. n)
+                    ShowNotification("BLACKLIST", "✅ Removed: " .. n)
                     refreshBlacklistUI()
                 end)
             end)
@@ -10919,7 +10428,7 @@ function buildBullysSettingsUI()
             local name = blBox.Text:gsub("%s", "")
             if name == "" then return end
             if addToBlacklist(name) then
-                ShowNotification("blacklist", "bloqueado · " .. name)
+                ShowNotification("BLACKLIST", "🚫 Blocked: " .. name)
                 blBox.Text = ""
                 refreshBlacklistUI()
             else
@@ -10998,7 +10507,7 @@ function buildBullysSettingsUI()
         dsyDesc.Size = UDim2.new(1,-16,1,0)
         dsyDesc.Position = UDim2.new(0,8,0,0)
         dsyDesc.BackgroundTransparency = 1
-        dsyDesc.Text = "Usa raknet.desync para dessincronizar\nsua posição do servidor.\nRequer executor com suporte a raknet."
+        dsyDesc.Text = "Modifica pacotes 0x1B via RakNet.\nFaz o servidor perder sua posição.\nRequer executor com suporte a raknet."
         dsyDesc.Font = Enum.Font.GothamMedium
         dsyDesc.TextSize = 11
         dsyDesc.TextColor3 = C().TS
@@ -11162,7 +10671,8 @@ if IS_MOBILE then
                     _carpetStatusLabel.Text       = newState and "ON" or "OFF"
                     _carpetStatusLabel.TextColor3 = newState and Theme.Success or Theme.Error
                 end
-                ShowNotification("carpet", newState and Config.TpSettings.Tool or "desligado")
+                ShowNotification("CARPET SPEED",
+                    newState and ("ON  |  "..Config.TpSettings.Tool.."  |  140") or "OFF")
             end
         )
         -- Atualiza cor do botão mobile conforme estado do carpet
@@ -11170,7 +10680,7 @@ if IS_MOBILE then
             while carpetFloatFrame and carpetFloatFrame.Parent do
                 local on = State.carpetSpeedEnabled
                 TweenService:Create(carpetFloatFrame, TweenInfo.new(0.15), {
-                    BackgroundColor3 = on and Color3.fromRGB(140, 140, 140) or Color3.fromRGB(10, 4, 4)
+                    BackgroundColor3 = on and Color3.fromRGB(220, 50, 50) or Color3.fromRGB(10, 4, 4)
                 }):Play()
                 local stroke = carpetFloatFrame:FindFirstChildOfClass("UIStroke")
                 if stroke then stroke.Transparency = on and 0 or 0.2 end
@@ -11224,7 +10734,7 @@ task.spawn(function()
     end
 end)
 
-function buildMiniActionsUI()
+function -- buildMiniActionsUI()
     local pg = PlayerGui
     if not pg then return end
     local oldG = pg:FindFirstChild("BullysMiniActions")
@@ -11699,7 +11209,7 @@ function buildMiniActionsUI()
         rjS.Thickness = 1
         rjS.Transparency = 0.5
         rej.MouseButton1Click:Connect(function()
-            ShowNotification("rejoin", "reconectando...")
+            ShowNotification("REJOIN", "Reconectando...")
             task.delay(0.5, function()
                 pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
             end)
@@ -11978,7 +11488,7 @@ function buildMiniActionsUI()
         end
         -- call backend carpet lock
         if _G.AutoBuyOnToggle then _G.AutoBuyOnToggle(autoBuyActive) end
-        ShowNotification("auto buy", autoBuyActive and "ativado" or "desativado")
+        ShowNotification("AUTO BUY", autoBuyActive and "✅ ENABLED" or "❌ DISABLED")
     end
 
     -- mini gui button
@@ -12046,7 +11556,7 @@ function buildMiniActionsUI()
                             local tl = t:lower()
                             if RARITY_WORDS[tl] then end
                             if t:match("^%$[%d%.]+[KkMmBb]?/s$") then
-                                if genFound=="" then genFound=t end; -- continue
+                                if genFound=="" then genFound=t end;-- -- continue
                             end
                             if t:match("^%$[%d%.]+[KkMmBb]?$") then end
                             if t:match("^[%d%.]+[KkMmBb]?$") then end
@@ -12274,14 +11784,14 @@ function buildMiniActionsUI()
                     lockedTarget=nil; lockedPart=nil; lockedModel=nil
                     stopCarpetLock()
                     destroyBodyPos()
-                    -- continue
+                   -- -- continue
                 end
                 if lockedPart or lockedModel then
                     if not partAlive() then
-                        ShowNotification("auto buy", "escaneando...")
+                        ShowNotification("AUTO BUY","📦 Reached base, scanning...")
                         lockedTarget=nil; lockedPart=nil; lockedModel=nil
                     end
-                    -- continue
+                   -- -- continue
                 end
                 local char = LocalPlayer.Character
                 local hrp  = char and char:FindFirstChild("HumanoidRootPart")
@@ -12299,7 +11809,7 @@ function buildMiniActionsUI()
                     lockedTarget = best
                     lockedPart   = best.part
                     lockedModel  = best.model or best.part.Parent
-                    ShowNotification("auto buy", best.name)
+                    ShowNotification("AUTO BUY","🔒 "..best.name)
                     startCarpetLock()
                 end
             end
@@ -12361,7 +11871,7 @@ function buildMiniActionsUI()
         local newState = not State.infiniteJumpEnabled
         setInfiniteJump(newState)
         updIJMini()
-        ShowNotification("infinite jump", newState and "ativado" or "desativado")
+        ShowNotification("INFINITE JUMP", newState and "ENABLED" or "DISABLED")
     end)
 
     miniSec("REMOTE SELL", 60)
@@ -12483,7 +11993,7 @@ function buildMiniActionsUI()
         rsTitle.Size             = UDim2.new(1, -60, 1, 0)
         rsTitle.Position         = UDim2.new(0, 14, 0, 0)
         rsTitle.BackgroundTransparency = 1
-        rsTitle.Text             = "⬛ WS  ·  REMOTE SELL"
+        rsTitle.Text             = "⬛ NOTZHUB  ·  REMOTE SELL"
         rsTitle.TextColor3       = Theme.TextPrimary
         rsTitle.Font             = Enum.Font.GothamBlack
         rsTitle.TextSize         = 13
@@ -12915,7 +12425,7 @@ function buildMiniActionsUI()
         rsScanBtn.MouseButton1Click:Connect(function()
             rsLockedPlot = nil -- force re-detect
             rsScan()
-            ShowNotification("remote sell", "scan completo")
+            ShowNotification("REMOTE SELL", "Scan completo!")
         end)
     end
 
@@ -12931,7 +12441,7 @@ function buildMiniActionsUI()
         if rsVisible and rsScanFn then
             task.spawn(rsScanFn)
         end
-        ShowNotification("remote sell", rsVisible and "aberto" or "fechado")
+        ShowNotification("REMOTE SELL", rsVisible and "✅ ABERTO" or "❌ FECHADO")
     end)
     _G.toggleRemoteSell = function()
         rsBtn.MouseButton1Click:Fire()
@@ -12942,7 +12452,7 @@ function buildMiniActionsUI()
 end
 
 task.spawn(function()
-    buildMiniActionsUI()
+    -- buildMiniActionsUI()
     -- Auto hide on start
     if Config.AutoHideMiniUI then
         local g = PlayerGui:FindFirstChild("BullysMiniActions")
@@ -12954,17 +12464,37 @@ end)
 
 -- ── RAKNET DESYNC (liga/desliga) ────────────────────────────────
 local _raknetDesyncActive = false
+local _raknetHookRegistered = false
 
 local function setRaknetDesync(enabled)
     _raknetDesyncActive = enabled
     Config.RaknetDesyncEnabled = enabled
     SaveConfig()
-    pcall(function() raknet.desync(enabled) end)
-    ShowNotification("desync", enabled and "ativado" or "desativado")
+    ShowNotification("DESYNC RAKNET", enabled and "ATIVADO" or "DESATIVADO")
 end
 
+local function initRaknetHook()
+    if _raknetHookRegistered then return end
+    if not (typeof(raknet) == "table" and typeof(raknet.add_send_hook) == "function") then
+        warn("[NOTZHUB] raknet não disponível neste executor")
+        return
+    end
+    _raknetHookRegistered = true
+    raknet.add_send_hook(function(packet)
+        if not _raknetDesyncActive then return end
+        if packet.PacketId == 0x1B then
+            local data = packet.AsBuffer
+            buffer.writeu32(data, 1, 0xFFFFFFFF)
+            buffer.writeu32(data, 5, 0xFFFFFFFF)
+            buffer.writeu32(data, 9, 0xFFFFFFFF)
+            packet:SetData(data)
+        end
+    end)
+end
+
+-- Registra o hook e restaura estado salvo
+pcall(initRaknetHook)
 if Config.RaknetDesyncEnabled then
-    pcall(function() raknet.desync(true) end)
     _raknetDesyncActive = true
 end
 _G.setRaknetDesync = setRaknetDesync
@@ -12990,9 +12520,9 @@ local function tpToBestBrainrot()
     local cacheHasAnyBase = SharedState.AllAnimalsCache and #SharedState.AllAnimalsCache > 0
     local useConv = bestConv and bestConv.part and bestConv.part.Parent
                     and not cacheHasAnyBase  -- so vai pra esteira se cache de base esta vazio
-    if useConv then ShowNotification("esteira", bestConv.name or "?"); task.spawn(function() local char=LocalPlayer.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); local hum=char and char:FindFirstChild("Humanoid"); if not hrp or not hum then return end; local tool=LocalPlayer.Backpack:FindFirstChild(Config.TpSettings.Tool) or char:FindFirstChild(Config.TpSettings.Tool); if tool then hum:EquipTool(tool) end; hrp.AssemblyLinearVelocity=Vector3.new(0,280,0); RunService.Heartbeat:Wait(); hrp.CFrame=CFrame.new(bestConv.part.Position+Vector3.new(0,3,0)) end); return end
-    if bestBase then ShowNotification("tp", bestBase.name .. "  ·  " .. (bestBase.owner or "?")); SharedState.SelectedPetData={petName=bestBase.name,mpsText=bestBase.genText,mpsValue=bestBase.genValue,owner=bestBase.owner,plot=bestBase.plot,slot=bestBase.slot,uid=bestBase.uid,mutation=bestBase.mutation,animalData=bestBase}; task.spawn(runAutoSnipe)
-    else ShowNotification("tp", "nenhum encontrado") end
+    if useConv then ShowNotification("TP BEST","ESTEIRA → "..(bestConv.name or "?")); task.spawn(function() local char=LocalPlayer.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); local hum=char and char:FindFirstChild("Humanoid"); if not hrp or not hum then return end; local tool=LocalPlayer.Backpack:FindFirstChild(Config.TpSettings.Tool) or char:FindFirstChild(Config.TpSettings.Tool); if tool then hum:EquipTool(tool) end; hrp.AssemblyLinearVelocity=Vector3.new(0,280,0); RunService.Heartbeat:Wait(); hrp.CFrame=CFrame.new(bestConv.part.Position+Vector3.new(0,3,0)) end); return end
+    if bestBase then ShowNotification("TP BEST","BASE → "..bestBase.name); SharedState.SelectedPetData={petName=bestBase.name,mpsText=bestBase.genText,mpsValue=bestBase.genValue,owner=bestBase.owner,plot=bestBase.plot,slot=bestBase.slot,uid=bestBase.uid,mutation=bestBase.mutation,animalData=bestBase}; task.spawn(runAutoSnipe)
+    else ShowNotification("TP BEST","No brainrot found!") end
 end
 _G.tpToBestBrainrot=tpToBestBrainrot
 
@@ -13059,7 +12589,7 @@ task.spawn(function()
 
             b.MouseButton1Click:Connect(function()
                 if isBlacklisted(plr.Name) then
-                    ShowNotification("blacklist", plr.Name)
+                    ShowNotification("STEALERS","⛔ "..plr.Name.." is blacklisted")
                     return
                 end
                 local adminFunc = _G.runAdminCommand
@@ -13068,15 +12598,15 @@ task.spawn(function()
                     adminFunc = _G.runAdminCommand
                 end
                 if not adminFunc then
-                    ShowNotification("admin", "cooldown")
+                    ShowNotification("STEALERS","Admin not ready yet")
                     return
                 end
-                ShowNotification(def.cmd, plr.Name)
+                ShowNotification("STEALERS","→ "..def.cmd.." on "..plr.Name)
                 local ok, result = pcall(adminFunc, plr, def.cmd)
                 if ok and result then
-                    ShowNotification(def.cmd, "enviado · " .. plr.Name)
+                    ShowNotification("STEALERS","✓ "..def.cmd.." sent to "..plr.Name)
                 else
-                    ShowNotification(def.cmd, "falhou · " .. plr.Name)
+                    ShowNotification("STEALERS","✗ "..def.cmd.." failed on "..plr.Name)
                 end
             end)
         end
@@ -13095,11 +12625,11 @@ task.spawn(function()
         blBtn.MouseButton1Click:Connect(function()
             local already=false
             for _,n in ipairs(BlacklistedPlayers) do if n:lower()==plr.Name:lower() then already=true;break end end
-            if already then ShowNotification("blacklist", "já bloqueado · " .. plr.Name);return end
+            if already then ShowNotification("BLACKLIST",plr.Name.." already blacklisted");return end
             table.insert(BlacklistedPlayers,plr.Name); Config.Blacklist=BlacklistedPlayers; SaveConfig()
             if refreshBlacklistUI then refreshBlacklistUI() end
             blBtn.BackgroundColor3=Color3.fromRGB(30,120,50); blBtn.Text="OK"
-            ShowNotification("blacklist", "bloqueado · " .. plr.Name)
+            ShowNotification("BLACKLIST","Blacklisted: "..plr.Name)
             task.delay(1.2,function() if blBtn and blBtn.Parent then blBtn.BackgroundColor3=Color3.fromRGB(120,20,20);blBtn.Text="BL" end end)
         end)
 
@@ -13394,7 +12924,7 @@ task.spawn(function()
                                 bb.Name = "StealPlotESP_" .. plr.Name
                                 bb.Adornee = part
                                 bb.AlwaysOnTop = true
-                                bb.Size = UDim2.new(0, 210, 0, 162)
+                                bb.Size = UDim2.new(0, 210, 0, 132)
                                 bb.StudsOffset = Vector3.new(0, 7, 0)
                                 bb.MaxDistance = 650
                                 bb.LightInfluence = 0
@@ -13498,67 +13028,6 @@ task.spawn(function()
                                     Instance.new("UICorner", no3d).CornerRadius = UDim.new(0, 8)
                                 end
 
-                                -- Botão TP para a base do stealer
-                                local tpBtn = Instance.new("TextButton")
-                                tpBtn.Name = "TPButton"
-                                tpBtn.Size = UDim2.new(1, -10, 0, 22)
-                                tpBtn.Position = UDim2.new(0, 5, 0, 130)
-                                tpBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-                                tpBtn.BorderSizePixel = 0
-                                tpBtn.Font = Enum.Font.GothamBlack
-                                tpBtn.TextSize = 10
-                                tpBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-                                tpBtn.Text = "TP BASE DO STEALER"
-                                tpBtn.Parent = root
-                                Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 6)
-                                local tpStroke = Instance.new("UIStroke", tpBtn)
-                                tpStroke.Color = Color3.fromRGB(140, 140, 140)
-                                tpStroke.Thickness = 1
-                                tpStroke.Transparency = 0.5
-
-                                tpBtn.MouseButton1Click:Connect(function()
-                                    local char = LocalPlayer.Character
-                                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                                    if not hrp then return end
-                                    -- Tenta pegar DeliveryHitbox do plot (posição real da base)
-                                    local targetPos = nil
-                                    if plot then
-                                        local dh = plot:FindFirstChild("DeliveryHitbox")
-                                        if dh and dh:IsA("BasePart") then
-                                            targetPos = dh.Position + Vector3.new(0, 6, 0)
-                                        end
-                                    end
-                                    -- Fallback para a part do sign
-                                    if not targetPos and part and part.Parent then
-                                        targetPos = part.Position + Vector3.new(0, 6, 0)
-                                    end
-                                    if targetPos then
-                                        hrp.CFrame = CFrame.new(targetPos)
-                                        ShowNotification("tp", plr.DisplayName)
-                                    end
-                                end)
-                                tpBtn.InputBegan:Connect(function(inp)
-                                    if inp.UserInputType == Enum.UserInputType.Touch then
-                                        local char = LocalPlayer.Character
-                                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                                        if not hrp then return end
-                                        local targetPos = nil
-                                        if plot then
-                                            local dh = plot:FindFirstChild("DeliveryHitbox")
-                                            if dh and dh:IsA("BasePart") then
-                                                targetPos = dh.Position + Vector3.new(0, 6, 0)
-                                            end
-                                        end
-                                        if not targetPos and part and part.Parent then
-                                            targetPos = part.Position + Vector3.new(0, 6, 0)
-                                        end
-                                        if targetPos then
-                                            hrp.CFrame = CFrame.new(targetPos)
-                                            ShowNotification("tp", plr.DisplayName)
-                                        end
-                                    end
-                                end)
-
                                 byUser[plr.UserId] = { bill = bb, adornee = part, stealKey = stealKey }
                             else
                                 row = byUser[plr.UserId]
@@ -13583,4 +13052,4 @@ task.spawn(function()
             for _, uid in ipairs(stale) do clearRow(uid) end
         end
     end
-end)end
+end)
