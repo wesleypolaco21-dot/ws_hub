@@ -186,7 +186,7 @@ DefaultConfig = {
     AutoStealSpeed = false,
     ShowJobJoiner = true,
     JobJoinerKey = "J",
-    CurrentTheme = "preto",
+    CurrentTheme = "dark_gray",
     ShowMiniActions = true,
     AutoHideMiniUI = false,
     MiniUIPos = {X = 0.01, Y = 0.35},
@@ -236,6 +236,7 @@ if Config.CurrentTheme and THEMES and THEMES[Config.CurrentTheme] then
 end
 
 function SaveConfig()
+    ShowNotification("CONFIG", "Configurações salvas com sucesso!")
     if writefile then
         pcall(function()
             local toSave = {}
@@ -304,6 +305,7 @@ end
 
 
 function instantClone()
+    ShowNotification("CLONE", "Iniciando clonagem instantânea...")
     if _G.isCloning then return end
     _G.isCloning = true
 
@@ -416,11 +418,11 @@ function triggerClosestUnlock(yLevel, maxY)
 end
 
 Theme = {
-    Background      = Color3.fromRGB(12, 5, 5),
-    Surface         = Color3.fromRGB(25, 8, 8),
-    SurfaceHighlight= Color3.fromRGB(45, 15, 15),
-    Accent1         = Color3.fromRGB(220, 50, 50),
-    Accent2         = Color3.fromRGB(160, 30, 30),
+    Background      = Color3.fromRGB(0, 0, 0),
+    Surface         = Color3.fromRGB(20, 20, 20),
+    SurfaceHighlight= Color3.fromRGB(40, 40, 40),
+    Accent1         = Color3.fromRGB(100, 100, 100),
+    Accent2         = Color3.fromRGB(60, 60, 60),
     TextPrimary     = Color3.fromRGB(240, 220, 220),
     TextSecondary   = Color3.fromRGB(200, 160, 160),
     Success         = Color3.fromRGB(220, 50, 50),
@@ -632,7 +634,7 @@ function addRacetrackBorder(parentFrame, speed)
     return stroke
 end
 
-local PRIORITY_LIST = {
+PRIORITY_LIST = {
   "Headless Horseman","Strawberry Elephant","Meowl","Signore Carapace","Skibidi Toilet","Griffin","Love Love Bear","Dragon Gingerini","Elefanto Frigo","Ginger Gerat","La Supreme Combinasion","Antonio","Dragon Cannelloni","Hydra Dragon Cannelloni","Dug dug dug","Ketupat Bros","Tirilikalika Tirilikalako","La Casa Boo","Los Amigos","Cerberus","Celestial Pegasus","Cooki and Milki","Rosey and Teddy","Reinito Sleighito","Capitano Moby","Spooky and Pumpky","Fragrama and Chocrama","Garama and Madundung","La Food Combinasion","Burguro and Fryuro","Popcuru and Fizzuru","Ketchuru and Musturu","La Secret Combinasion","Tralaledon","Tictac Sahur","Ketupat Kepat","Tang Tang Keletang","Orcaledon","La Ginger Sekolah","Los Spaghettis","Lavadorito Spinito","Swaggy Bros","La Taco Combinasion","Los Primos","Chillin Chili","Tuff Toucan","W or L","Chillin Chili","Chipso and Queso","Fishino Clownino"
 }
 
@@ -643,13 +645,13 @@ do
     end
 end
 
-local function savePriorityToConfig()
+function savePriorityToConfig()
     Config.PriorityList = {}
     for i, v in ipairs(PRIORITY_LIST) do Config.PriorityList[i] = v end
     SaveConfig()
 end
 
-local function findAdorneeGlobal(animalData)
+function findAdorneeGlobal(animalData)
     if not animalData then return nil end
     local plot = Workspace:FindFirstChild("Plots") and Workspace.Plots:FindFirstChild(animalData.plot)
     if plot then
@@ -669,7 +671,7 @@ local function findAdorneeGlobal(animalData)
     return nil
 end
 
-local function CreateGradient(parent)
+function CreateGradient(parent)
     local g = Instance.new("UIGradient", parent)
     g.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0, Theme.Accent2),
@@ -679,7 +681,7 @@ local function CreateGradient(parent)
     return g
 end
 
-local function MakeDraggable(handle, target, saveKey)
+function MakeDraggable(handle, target, saveKey)
     local dragging, dragInput, dragStart, startPos
 
     handle.InputBegan:Connect(function(input)
@@ -722,7 +724,7 @@ local function MakeDraggable(handle, target, saveKey)
     end)
 end
 
-local DANGER_TOOLS = {
+DANGER_TOOLS = {
     ["Boogie Bomb"] = true,
     ["Medusa's Head"] = true,
     ["Body Swap Potion"] = true,
@@ -730,11 +732,11 @@ local DANGER_TOOLS = {
     ["Rainbowrath Sword"] = true,
     ["Gummy Bear"] = true,
 }
-local function isMobileDevice()
+function isMobileDevice()
     return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
 end
-local IS_MOBILE = isMobileDevice()
-local function ApplyViewportUIScaleAdmin(targetFrame, _, _, minScale, maxScale)
+IS_MOBILE = isMobileDevice()
+function ApplyViewportUIScaleAdmin(targetFrame, _, _, minScale, maxScale)
     if not targetFrame or not IS_MOBILE then return end
     local existing = targetFrame:FindFirstChildOfClass("UIScale")
     if existing then existing:Destroy() end
@@ -742,7 +744,7 @@ local function ApplyViewportUIScaleAdmin(targetFrame, _, _, minScale, maxScale)
     sc.Parent = targetFrame
     sc.Scale = math.clamp(0.65, minScale or 0.45, maxScale or 0.85)
 end
-local function AddMobileMinimizeAdmin(frame, labelText)
+function AddMobileMinimizeAdmin(frame, labelText)
     if not IS_MOBILE or not frame then return end
     local header = frame:FindFirstChildWhichIsA("Frame")
     if not header then return end
@@ -781,20 +783,72 @@ local function AddMobileMinimizeAdmin(frame, labelText)
     end)
 end
 
-local function ShowNotification(title, text) end
+function ShowNotification(title, text)
+    pcall(function()
+        local BullysNotif = PlayerGui:FindFirstChild("BullysNotif")
+        if not BullysNotif then
+            BullysNotif = Instance.new("ScreenGui", PlayerGui)
+            BullysNotif.Name = "BullysNotif"
+        end
+        local container = BullysNotif:FindFirstChild("NotifContainer")
+        if not container then
+            container = Instance.new("Frame", BullysNotif)
+            container.Name = "NotifContainer"
+            container.Size = UDim2.new(0, 300, 1, 0)
+            container.Position = UDim2.new(1, -310, 0, 0)
+            container.BackgroundTransparency = 1
+            local layout = Instance.new("UIListLayout", container)
+            layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+            layout.Padding = UDim.new(0, 10)
+        end
+        local notif = Instance.new("Frame", container)
+        notif.Size = UDim2.new(1, 0, 0, 60)
+        notif.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        notif.BackgroundTransparency = 0.1
+        Instance.new("UICorner", notif).CornerRadius = UDim.new(0, 8)
+        local stroke = Instance.new("UIStroke", notif)
+        stroke.Color = Color3.fromRGB(100, 100, 100)
+        stroke.Thickness = 1.5
+        local tLabel = Instance.new("TextLabel", notif)
+        tLabel.Size = UDim2.new(1, -20, 0, 20)
+        tLabel.Position = UDim2.new(0, 10, 0, 5)
+        tLabel.Text = title:upper()
+        tLabel.Font = Enum.Font.GothamBlack
+        tLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+        tLabel.TextSize = 14
+        tLabel.BackgroundTransparency = 1
+        local mLabel = Instance.new("TextLabel", notif)
+        mLabel.Size = UDim2.new(1, -20, 0, 30)
+        mLabel.Position = UDim2.new(0, 10, 0, 25)
+        mLabel.Text = text
+        mLabel.Font = Enum.Font.GothamMedium
+        mLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        mLabel.TextSize = 12
+        mLabel.BackgroundTransparency = 1
+        mLabel.TextWrapped = true
+        task.delay(5, function()
+            local tween = game:GetService("TweenService"):Create(notif, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+            game:GetService("TweenService"):Create(stroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
+            game:GetService("TweenService"):Create(tLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+            game:GetService("TweenService"):Create(mLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+            tween:Play()
+            tween.Completed:Connect(function() notif:Destroy() end)
+        end)
+    end)
+end
 
-local function isPlayerCharacter(model)
+function isPlayerCharacter(model)
     return Players:GetPlayerFromCharacter(model) ~= nil
 end
 
-local function handleAnimator(animator)
+function handleAnimator(animator)
     local model = animator:FindFirstAncestorOfClass("Model")
     if model and isPlayerCharacter(model) then return end
     for _, track in pairs(animator:GetPlayingAnimationTracks()) do track:Stop(0) end
     animator.AnimationPlayed:Connect(function(track) track:Stop(0) end)
 end
 
-local function stripVisuals(obj)
+function stripVisuals(obj)
     local model = obj:FindFirstAncestorOfClass("Model")
     local isPlayer = model and isPlayerCharacter(model)
 
@@ -831,7 +885,7 @@ local function stripVisuals(obj)
     end
 end
 
-local fpsBoostState = {
+fpsBoostState = {
     enabled = false,
     original = nil,
     effectStates = {},
@@ -839,7 +893,7 @@ local fpsBoostState = {
     descendantConn = nil,
 }
 
-local function setFPSBoost(enabled)
+function setFPSBoost(enabled)
     Config.FPSBoost = enabled
     SaveConfig()
     if enabled then
@@ -933,7 +987,7 @@ local function setFPSBoost(enabled)
             end
         end
 if Config.FPSBoost then task.spawn(function() task.wait(1); setFPSBoost(true) end) end
-local State = {
+State = {
     ProximityAPActive = false,
     carpetSpeedEnabled = false,
     infiniteJumpEnabled = Config.TpSettings.InfiniteJump,
@@ -942,7 +996,7 @@ local State = {
     isTpMoving = false,
     manualTargetEnabled = false,
 }
-local Connections = {
+Connections = {
     carpetSpeedConnection = nil,
     infiniteJumpConnection = nil,
     _ijInputBegan = nil,
@@ -10734,7 +10788,7 @@ task.spawn(function()
     end
 end)
 
-function -- buildMiniActionsUI()
+-- function buildMiniActionsUI()
     local pg = PlayerGui
     if not pg then return end
     local oldG = pg:FindFirstChild("BullysMiniActions")
