@@ -186,7 +186,7 @@ DefaultConfig = {
     AutoStealSpeed = false,
     ShowJobJoiner = true,
     JobJoinerKey = "J",
-    CurrentTheme = "dark_gray",
+    CurrentTheme = "preto",
     ShowMiniActions = true,
     AutoHideMiniUI = false,
     MiniUIPos = {X = 0.01, Y = 0.35},
