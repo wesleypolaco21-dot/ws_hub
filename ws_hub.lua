@@ -1,5 +1,5 @@
 -- ╔══════════════════════════════════════╗
--- ║         WS HUB  •  v1.4             ║
+-- ║         WS HUB  •  v2.0             ║
 -- ║         @o_escolhido                ║
 -- ╚══════════════════════════════════════╝
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -1625,6 +1625,206 @@ task.spawn(function()
         end
     end
     if addRacetrackBorder then addRacetrackBorder(frame, Theme.Accent1, 2.6) end
+
+    -- ── Mini card (modo minimizado) ──────────────────────────
+    local miniCard = Instance.new("Frame")
+    miniCard.Name = "StealMiniCard"
+    miniCard.Size = UDim2.new(0, 276, 0, 72)
+    miniCard.Position = frame.Position
+    miniCard.BackgroundColor3 = Theme.Surface
+    miniCard.BackgroundTransparency = 0.08
+    miniCard.BorderSizePixel = 0
+    miniCard.Visible = false
+    miniCard.Parent = screenGui
+    Instance.new("UICorner", miniCard).CornerRadius = UDim.new(0, 12)
+    local mcStroke = Instance.new("UIStroke", miniCard)
+    mcStroke.Color = Color3.fromRGB(60,60,60); mcStroke.Thickness = 1; mcStroke.Transparency = 0.3
+    MakeDraggable(miniCard, miniCard, "AutoSteal")
+
+    -- Preview 3D no mini card
+    local mcPreview = Instance.new("Frame", miniCard)
+    mcPreview.Size = UDim2.new(0, 52, 0, 52)
+    mcPreview.Position = UDim2.new(0, 10, 0.5, -26)
+    mcPreview.BackgroundColor3 = Theme.SurfaceHighlight
+    mcPreview.BackgroundTransparency = 0.1
+    mcPreview.BorderSizePixel = 0
+    Instance.new("UICorner", mcPreview).CornerRadius = UDim.new(0, 8)
+
+    local mcVp = Instance.new("ViewportFrame", mcPreview)
+    mcVp.Size = UDim2.new(1,0,1,0)
+    mcVp.BackgroundTransparency = 1
+    mcVp.Ambient = Color3.fromRGB(245,245,245)
+    mcVp.LightColor = Color3.new(1,1,1)
+    mcVp.LightDirection = Vector3.new(-0.45,-0.9,-0.35)
+
+    -- Ícone fallback
+    local mcIcon = Instance.new("TextLabel", mcPreview)
+    mcIcon.Size = UDim2.new(1,0,1,0)
+    mcIcon.BackgroundTransparency = 1
+    mcIcon.Font = Enum.Font.GothamBlack
+    mcIcon.TextSize = 11
+    mcIcon.TextColor3 = Theme.TextSecondary
+    mcIcon.Text = "?"
+
+    -- Nome do pet
+    local mcName = Instance.new("TextLabel", miniCard)
+    mcName.Size = UDim2.new(1,-140,0,20)
+    mcName.Position = UDim2.new(0,70,0,8)
+    mcName.BackgroundTransparency = 1
+    mcName.Font = Enum.Font.GothamBlack
+    mcName.TextSize = 12
+    mcName.TextColor3 = Theme.TextPrimary
+    mcName.TextXAlignment = Enum.TextXAlignment.Left
+    mcName.TextTruncate = Enum.TextTruncate.AtEnd
+    mcName.Text = "—"
+
+    -- Valor $/s
+    local mcValue = Instance.new("TextLabel", miniCard)
+    mcValue.Size = UDim2.new(1,-140,0,15)
+    mcValue.Position = UDim2.new(0,70,0,29)
+    mcValue.BackgroundTransparency = 1
+    mcValue.Font = Enum.Font.GothamBold
+    mcValue.TextSize = 11
+    mcValue.TextColor3 = Theme.Accent1
+    mcValue.TextXAlignment = Enum.TextXAlignment.Left
+    mcValue.Text = ""
+
+    -- Tag de modo (PRIORITY / HIGHEST / NEAREST)
+    local mcMode = Instance.new("TextLabel", miniCard)
+    mcMode.Size = UDim2.new(1,-140,0,13)
+    mcMode.Position = UDim2.new(0,70,0,46)
+    mcMode.BackgroundTransparency = 1
+    mcMode.Font = Enum.Font.GothamMedium
+    mcMode.TextSize = 9
+    mcMode.TextColor3 = Color3.fromRGB(110,110,110)
+    mcMode.TextXAlignment = Enum.TextXAlignment.Left
+    mcMode.Text = ""
+
+    -- Tag PRIORITY (chip laranja)
+    local mcPriorityTag = Instance.new("Frame", miniCard)
+    mcPriorityTag.Size = UDim2.new(0,58,0,16)
+    mcPriorityTag.Position = UDim2.new(1,-68,0,8)
+    mcPriorityTag.BackgroundColor3 = Color3.fromRGB(200,120,30)
+    mcPriorityTag.BorderSizePixel = 0
+    mcPriorityTag.Visible = false
+    Instance.new("UICorner", mcPriorityTag).CornerRadius = UDim.new(0,6)
+    local mcPriorityLbl = Instance.new("TextLabel", mcPriorityTag)
+    mcPriorityLbl.Size = UDim2.new(1,0,1,0)
+    mcPriorityLbl.BackgroundTransparency = 1
+    mcPriorityLbl.Font = Enum.Font.GothamBlack
+    mcPriorityLbl.TextSize = 9
+    mcPriorityLbl.TextColor3 = Color3.new(1,1,1)
+    mcPriorityLbl.Text = "PRIORITY"
+
+    -- Botão expandir no mini card
+    local mcExpandBtn = Instance.new("TextButton", miniCard)
+    mcExpandBtn.Size = UDim2.new(0,22,0,22)
+    mcExpandBtn.Position = UDim2.new(1,-28,0,4)
+    mcExpandBtn.BackgroundColor3 = Color3.fromRGB(38,38,38)
+    mcExpandBtn.BorderSizePixel = 0
+    mcExpandBtn.Font = Enum.Font.GothamBlack
+    mcExpandBtn.TextSize = 12
+    mcExpandBtn.TextColor3 = Color3.fromRGB(180,180,180)
+    mcExpandBtn.Text = "↑"
+    mcExpandBtn.AutoButtonColor = false
+    Instance.new("UICorner", mcExpandBtn).CornerRadius = UDim.new(0,6)
+
+    -- Função para atualizar o mini card com o melhor pet
+    local _lastMiniPet = nil
+    local function updateMiniCard()
+        local pet = SharedState.SelectedPetData
+        if not pet then
+            -- Pegar o melhor do cache
+            local cache = SharedState.AllAnimalsCache
+            if cache and #cache > 0 then
+                pet = {petName=cache[1].name, mpsText=cache[1].genText, mpsValue=cache[1].genValue,
+                       mutation=cache[1].mutation, uid=cache[1].uid, animalData=cache[1]}
+            end
+        end
+        if not pet then
+            mcName.Text = "sem alvo"
+            mcValue.Text = ""
+            mcMode.Text = ""
+            mcPriorityTag.Visible = false
+            mcIcon.Text = "?"
+            return
+        end
+        if pet.uid == _lastMiniPet then return end
+        _lastMiniPet = pet.uid
+        mcName.Text = pet.petName or "?"
+        mcValue.Text = pet.mpsText or ""
+
+        -- Modo atual
+        local n,h,p = false,false,false
+        if SharedState.GetStealModes then n,h,p = SharedState.GetStealModes() end
+        mcMode.Text = p and "priority" or h and "highest" or n and "nearest" or ""
+
+        -- Tag prioridade
+        local isPrio = _G.IsFavoritePet and _G.IsFavoritePet(pet.petName)
+        if not isPrio then
+            for _, pn in ipairs(PRIORITY_LIST or {}) do
+                if pn:lower() == (pet.petName or ""):lower() then isPrio=true; break end
+            end
+        end
+        mcPriorityTag.Visible = isPrio
+
+        -- Preview 3D
+        pcall(function()
+            for _, c in ipairs(mcVp:GetChildren()) do c:Destroy() end
+            if _G.XiAttachPet3DPreview and pet.animalData then
+                _G.XiAttachPet3DPreview(mcPreview, pet, {
+                    Size = UDim2.new(1,0,1,0),
+                    Position = UDim2.new(0,0,0,0),
+                    CornerRadius = 8, Fov = 34,
+                })
+                mcIcon.Text = ""
+            else
+                mcIcon.Text = (pet.petName or "?"):sub(1,1):upper()
+            end
+        end)
+    end
+
+    -- Toggle minimizar/expandir
+    local _isMinimized = false
+    local function setMinimized(on)
+        _isMinimized = on
+        frame.Visible = not on
+        miniCard.Visible = on
+        -- Sincronizar posição
+        if on then
+            miniCard.Position = frame.Position
+            updateMiniCard()
+        else
+            frame.Position = miniCard.Position
+        end
+    end
+
+    -- Botão minimizar no painel principal
+    local minBtn = Instance.new("TextButton", frame)
+    minBtn.Size = UDim2.new(0,22,0,16)
+    minBtn.Position = UDim2.new(1,-26,0,4)
+    minBtn.BackgroundColor3 = Color3.fromRGB(38,38,38)
+    minBtn.BorderSizePixel = 0
+    minBtn.Font = Enum.Font.GothamBlack
+    minBtn.TextSize = 10
+    minBtn.TextColor3 = Color3.fromRGB(160,160,160)
+    minBtn.Text = "↓"
+    minBtn.AutoButtonColor = false
+    minBtn.ZIndex = 5
+    Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0,5)
+    minBtn.MouseButton1Click:Connect(function() setMinimized(true) end)
+    minBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch then setMinimized(true) end end)
+
+    mcExpandBtn.MouseButton1Click:Connect(function() setMinimized(false) end)
+    mcExpandBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch then setMinimized(false) end end)
+
+    -- Atualizar mini card periodicamente quando minimizado
+    task.spawn(function()
+        while true do
+            task.wait(0.6)
+            if _isMinimized then updateMiniCard() end
+        end
+    end)
     
     local header = Instance.new("Frame", frame); header.Size = UDim2.new(1,0,0,14); header.BackgroundTransparency = 1
     MakeDraggable(header, frame, "AutoSteal") 
@@ -2544,9 +2744,6 @@ task.spawn(function()
         local ct = allPets and allPets[selectedTargetIndex]
         local prevUID = SharedState.SelectedPetData and SharedState.SelectedPetData.uid
         SharedState.SelectedPetData = ct
-        if ct and ct.uid ~= prevUID then
-            ShowNotification("alvo", (ct.petName or ct.name or "?") .. "  ·  " .. (ct.owner or "?"))
-        end
         local newUID = ct and ct.uid
         if Config.AutoBack and _G.startAutoBack and _G.stopAutoBack and newUID ~= prevUID then
             pcall(function()
@@ -2579,7 +2776,6 @@ task.spawn(function()
         autoStealEnabled = true
         SharedState.ListNeedsRedraw = false
         updateUI(true, get_all_pets())
-        ShowNotification("auto steal", "ativado")
     end)
     
     nearestBtn.MouseButton1Click:Connect(function()
@@ -2588,7 +2784,6 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
-        ShowNotification("modo", "nearest")
     end)
 
     highestBtn.MouseButton1Click:Connect(function()
@@ -2597,7 +2792,6 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
-        ShowNotification("modo", "highest")
     end)
 
     priorityBtn.MouseButton1Click:Connect(function()
@@ -2606,7 +2800,6 @@ task.spawn(function()
         Config.StealNearest = stealNearestEnabled; Config.StealHighest = stealHighestEnabled; Config.StealPriority = stealPriorityEnabled
         SaveConfig()
         SharedState.ListNeedsRedraw = false; updateUI(autoStealEnabled, get_all_pets())
-        ShowNotification("modo", "priority")
     end)
 
     -- Expose steal mode state + toggle for the mini bar
@@ -5265,15 +5458,13 @@ local function runAutoSnipe()
             end
         end
         if bestEntry then targetPetData=bestEntry
-            ShowNotification("tp", bestEntry.name .. "  ·  " .. (bestEntry.owner or "?"))
         else
-            if not SharedState.SelectedPetData then ShowNotification("aviso", "sem alvo"); return end
+            if not SharedState.SelectedPetData then ShowNotification("ERROR","No target selected!"); return end
             targetPetData=SharedState.SelectedPetData.animalData
         end
     else
         if not SharedState.SelectedPetData then ShowNotification("ERROR","No target selected!"); return end
         targetPetData = SharedState.SelectedPetData.animalData
-        ShowNotification("tp", targetPetData and (targetPetData.name or "?") or "?")
     end
     if not targetPetData then return end
 
@@ -6735,8 +6926,6 @@ LocalPlayer:GetAttributeChangedSignal("Stealing"):Connect(function()
     local wasStealing = not isStealing 
 
     if isStealing then
-        local petName = tostring(LocalPlayer:GetAttribute("StealingIndex") or "?")
-        ShowNotification("roubo", petName)
         if Config.AutoInvisDuringSteal and _G.toggleInvisibleSteal and not _G.invisibleStealEnabled then
             _G.toggleInvisibleSteal()
         end
@@ -6744,7 +6933,6 @@ LocalPlayer:GetAttributeChangedSignal("Stealing"):Connect(function()
             triggerClosestUnlock(nil, 19)
         end
     elseif wasStealing then
-        
         if Config.AutoInvisDuringSteal and _G.toggleInvisibleSteal and _G.invisibleStealEnabled then
             _G.toggleInvisibleSteal()
         end
@@ -7840,7 +8028,7 @@ task.spawn(function()
         authors.Size = UDim2.new(0, 150, 1, 0)
         authors.Position = UDim2.new(0, 122, 0, 0)
         authors.BackgroundTransparency = 1
-        authors.Text = "@o_escolhido  •  v1.4"
+        authors.Text = "@o_escolhido  •  v2.0"
         authors.Font = Enum.Font.GothamBold
         authors.TextSize = 10
         authors.TextColor3 = Theme.TextSecondary
@@ -9886,6 +10074,7 @@ function buildBullysSettingsUI()
         {name="Temas",     id="tem"},
         {name="BList",     id="bl"},
         {name="Desync",    id="dsy"},
+        {name="Sell",      id="sell"},
     }
     local tBtns2 = {}
     local tScrolls2 = {}
@@ -10129,6 +10318,7 @@ function buildBullysSettingsUI()
     makeSec(mS,"PROTECTION",25)
     makeSec(mS,"AUTO UNLOCK",28)
     makeToggle(mS,"Auto Unlock on Steal",function() return Config.AutoUnlockOnSteal end,function(v) Config.AutoUnlockOnSteal=v; SaveConfig() end,281)
+    makeToggle(mS,"Smart Unlock (ordem correta)",function() return Config.SmartUnlockEnabled end,function(v) Config.SmartUnlockEnabled=v; SaveConfig() end,282)
     makeSec(mS,"AUTOMATION",30)
     makeToggle(mS,"Auto Invis no Steal",function() return Config.AutoInvisDuringSteal end,function(v) Config.AutoInvisDuringSteal=v; _G.AutoInvisDuringSteal=v; SaveConfig() end,31)
     makeToggle(mS,"Auto Kick no Steal",function() return Config.AutoKickOnSteal end,function(v) if _G.setAutoKickFromSettings then _G.setAutoKickFromSettings(v) else Config.AutoKickOnSteal=v; SaveConfig() end end,32)
@@ -10678,12 +10868,599 @@ function buildBullysSettingsUI()
         dsyDesc.TextWrapped = true
     end
 
+    -- ── SELL TAB ──
+    do
+        local sellS = tScrolls2["sell"]
+
+        -- Config defaults
+        if type(Config.SmartSellEnabled)  ~= "boolean" then Config.SmartSellEnabled  = false end
+        if type(Config.SmartSellMinValue) ~= "number"  then Config.SmartSellMinValue  = 0     end
+        if type(Config.SmartSellMaxValue) ~= "number"  then Config.SmartSellMaxValue  = 0     end
+        if type(Config.SmartSellRarities) ~= "table"   then Config.SmartSellRarities  = {}    end
+
+        local RARITIES = {"Secret","Divine","Legendary","Epic","Rare","Uncommon","Common"}
+        local RARITY_COLORS = {
+            Secret    = Color3.fromRGB(255,80,80),
+            Divine    = Color3.fromRGB(255,200,50),
+            Legendary = Color3.fromRGB(180,80,255),
+            Epic      = Color3.fromRGB(80,120,255),
+            Rare      = Color3.fromRGB(50,200,255),
+            Uncommon  = Color3.fromRGB(80,220,120),
+            Common    = Color3.fromRGB(140,140,140),
+        }
+
+        local function isRarSel(r)
+            for _, v in ipairs(Config.SmartSellRarities) do if v==r then return true end end
+            return false
+        end
+
+        -- ── Toggle ──
+        makeSec(sellS, "SMART SELL", 0)
+        local function makeRow(parent, lo)
+            local f = Instance.new("Frame", parent)
+            f.Size = UDim2.new(1,0,0,34); f.BackgroundColor3 = C().SURF
+            f.BorderSizePixel=0; f.LayoutOrder=lo
+            Instance.new("UICorner",f).CornerRadius=UDim.new(0,7)
+            return f
+        end
+
+        local swRow = makeRow(sellS, 1)
+        local swLbl = Instance.new("TextLabel", swRow)
+        swLbl.Size=UDim2.new(1,-54,1,0); swLbl.Position=UDim2.new(0,10,0,0)
+        swLbl.BackgroundTransparency=1; swLbl.Text="Smart Sell"
+        swLbl.Font=Enum.Font.GothamBold; swLbl.TextSize=12
+        swLbl.TextColor3=C().TP; swLbl.TextXAlignment=Enum.TextXAlignment.Left
+
+        local swFr = Instance.new("Frame", swRow)
+        swFr.Size=UDim2.new(0,38,0,20); swFr.Position=UDim2.new(1,-46,0.5,-10)
+        swFr.BackgroundColor3=Config.SmartSellEnabled and Theme.Accent1 or C().SH
+        Instance.new("UICorner",swFr).CornerRadius=UDim.new(1,0)
+        local swDot=Instance.new("Frame",swFr); swDot.Size=UDim2.new(0,15,0,15)
+        swDot.Position=Config.SmartSellEnabled and UDim2.new(1,-17,0.5,-7.5) or UDim2.new(0,2,0.5,-7.5)
+        swDot.BackgroundColor3=Color3.new(1,1,1); Instance.new("UICorner",swDot).CornerRadius=UDim.new(1,0)
+        local swBtn=Instance.new("TextButton",swFr); swBtn.Size=UDim2.new(1,0,1,0)
+        swBtn.BackgroundTransparency=1; swBtn.Text=""; swBtn.ZIndex=4; swBtn.AutoButtonColor=false
+
+        local function togSell()
+            Config.SmartSellEnabled=not Config.SmartSellEnabled; SaveConfig()
+            TweenService:Create(swDot,TweenInfo.new(0.15),{Position=Config.SmartSellEnabled and UDim2.new(1,-17,0.5,-7.5) or UDim2.new(0,2,0.5,-7.5)}):Play()
+            TweenService:Create(swFr,TweenInfo.new(0.15),{BackgroundColor3=Config.SmartSellEnabled and Theme.Accent1 or C().SH}):Play()
+        end
+        swBtn.MouseButton1Click:Connect(togSell)
+        swBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch then togSell() end end)
+
+        -- ── Valor mínimo ──
+        makeSec(sellS, "FILTRO DE VALOR", 2)
+        local function makeValRow(label, cfgKey, lo)
+            local r = makeRow(sellS, lo)
+            local lbl=Instance.new("TextLabel",r); lbl.Size=UDim2.new(0.5,0,1,0)
+            lbl.Position=UDim2.new(0,10,0,0); lbl.BackgroundTransparency=1
+            lbl.Text=label; lbl.Font=Enum.Font.GothamBold; lbl.TextSize=11
+            lbl.TextColor3=C().TS; lbl.TextXAlignment=Enum.TextXAlignment.Left
+            local box=Instance.new("TextBox",r); box.Size=UDim2.new(0,90,0,24)
+            box.Position=UDim2.new(1,-100,0.5,-12); box.BackgroundColor3=C().BG
+            box.BorderSizePixel=0; box.Font=Enum.Font.GothamBold; box.TextSize=12
+            box.TextColor3=C().TP; box.Text=tostring(Config[cfgKey])
+            box.PlaceholderText="0"; box.TextXAlignment=Enum.TextXAlignment.Center
+            Instance.new("UICorner",box).CornerRadius=UDim.new(0,6)
+            box.FocusLost:Connect(function()
+                local v=tonumber(box.Text) or 0
+                Config[cfgKey]=v; box.Text=tostring(v); SaveConfig()
+            end)
+        end
+        makeValRow("Valor mínimo ($/s)", "SmartSellMinValue", 3)
+        makeValRow("Valor máximo ($/s)", "SmartSellMaxValue", 4)
+
+        -- ── Raridades ──
+        makeSec(sellS, "RARIDADES", 5)
+        local rarBtns = {}
+        for i, rar in ipairs(RARITIES) do
+            local r = makeRow(sellS, 5+i)
+            local lbl=Instance.new("TextLabel",r); lbl.Size=UDim2.new(1,-54,1,0)
+            lbl.Position=UDim2.new(0,10,0,0); lbl.BackgroundTransparency=1
+            lbl.Text=rar; lbl.Font=Enum.Font.GothamBold; lbl.TextSize=12
+            lbl.TextColor3=RARITY_COLORS[rar]; lbl.TextXAlignment=Enum.TextXAlignment.Left
+
+            local on=isRarSel(rar)
+            local chk=Instance.new("TextButton",r); chk.Size=UDim2.new(0,26,0,26)
+            chk.Position=UDim2.new(1,-36,0.5,-13)
+            chk.BackgroundColor3=on and (RARITY_COLORS[rar] or Theme.Accent1) or C().SH
+            chk.BorderSizePixel=0; chk.Font=Enum.Font.GothamBlack; chk.TextSize=14
+            chk.TextColor3=Color3.new(1,1,1); chk.Text=on and "✓" or ""
+            chk.AutoButtonColor=false; Instance.new("UICorner",chk).CornerRadius=UDim.new(0,6)
+            rarBtns[rar]=chk
+
+            local function togRar()
+                if isRarSel(rar) then
+                    local nl={}
+                    for _,v in ipairs(Config.SmartSellRarities) do if v~=rar then table.insert(nl,v) end end
+                    Config.SmartSellRarities=nl
+                else
+                    table.insert(Config.SmartSellRarities,rar)
+                end
+                SaveConfig()
+                local nowOn=isRarSel(rar)
+                TweenService:Create(chk,TweenInfo.new(0.12),{BackgroundColor3=nowOn and (RARITY_COLORS[rar] or Theme.Accent1) or C().SH}):Play()
+                chk.Text=nowOn and "✓" or ""
+            end
+            chk.MouseButton1Click:Connect(togRar)
+            chk.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch then togRar() end end)
+        end
+
+        -- ── Vender Agora ──
+        makeSec(sellS, "AÇÃO", 14)
+
+        local statusLbl = Instance.new("TextLabel", sellS)
+        statusLbl.Size=UDim2.new(1,0,0,22); statusLbl.BackgroundTransparency=1
+        statusLbl.Font=Enum.Font.GothamMedium; statusLbl.TextSize=11
+        statusLbl.TextColor3=C().TS; statusLbl.Text="Pronto"
+        statusLbl.TextXAlignment=Enum.TextXAlignment.Left
+        statusLbl.LayoutOrder=15
+
+        local sellNowBtn = Instance.new("TextButton", sellS)
+        sellNowBtn.Size=UDim2.new(1,0,0,36); sellNowBtn.BackgroundColor3=Color3.fromRGB(45,45,45)
+        sellNowBtn.BorderSizePixel=0; sellNowBtn.Font=Enum.Font.GothamBlack
+        sellNowBtn.TextSize=13; sellNowBtn.TextColor3=Color3.fromRGB(200,200,200)
+        sellNowBtn.Text="VENDER AGORA"; sellNowBtn.AutoButtonColor=false; sellNowBtn.LayoutOrder=16
+        Instance.new("UICorner",sellNowBtn).CornerRadius=UDim.new(0,7)
+        Instance.new("UIStroke",sellNowBtn).Color=Color3.fromRGB(70,70,70)
+
+        local function doSmartSell()
+            sellNowBtn.Text="vendendo..."
+            local plot = nil
+            if rsFindPlot then
+                plot = rsFindPlot()
+            else
+                local plots = Workspace:FindFirstChild("Plots")
+                if plots then
+                    for _, p in ipairs(plots:GetChildren()) do
+                        local sign = p:FindFirstChild("PlotSign")
+                        if sign then
+                            local yb = sign:FindFirstChild("YourBase")
+                            if yb and yb:IsA("BillboardGui") and yb.Enabled then
+                                plot = p; break
+                            end
+                        end
+                    end
+                end
+            end
+            if not plot then statusLbl.Text="base não encontrada"; sellNowBtn.Text="VENDER AGORA"; return end
+
+            local podiums = plot:FindFirstChild("AnimalPodiums")
+            if not podiums then statusLbl.Text="podiums não encontrados"; sellNowBtn.Text="VENDER AGORA"; return end
+
+            -- Função para checar se nome está na priority list
+            local function isInPriority(name)
+                if not name then return false end
+                local nl = name:lower()
+                for _, pn in ipairs(PRIORITY_LIST) do
+                    if pn:lower() == nl then return true end
+                end
+                return false
+            end
+
+            -- Função de confirmação simples via GUI
+            local function askConfirm(petName, callback)
+                local sg = Instance.new("ScreenGui")
+                sg.Name = "SellConfirm"; sg.ResetOnSpawn = false
+                sg.IgnoreGuiInset = true; sg.DisplayOrder = 9999
+                sg.Parent = PlayerGui
+
+                local overlay = Instance.new("Frame", sg)
+                overlay.Size = UDim2.new(1,0,1,0)
+                overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+                overlay.BackgroundTransparency = 0.55
+                overlay.BorderSizePixel = 0
+
+                local box = Instance.new("Frame", overlay)
+                box.Size = UDim2.new(0,280,0,110)
+                box.AnchorPoint = Vector2.new(0.5,0.5)
+                box.Position = UDim2.new(0.5,0,0.5,0)
+                box.BackgroundColor3 = Color3.fromRGB(22,22,22)
+                box.BorderSizePixel = 0
+                Instance.new("UICorner",box).CornerRadius = UDim.new(0,12)
+                local bStroke = Instance.new("UIStroke",box)
+                bStroke.Color = Color3.fromRGB(180,80,80); bStroke.Thickness = 1.5
+
+                local warn = Instance.new("TextLabel",box)
+                warn.Size = UDim2.new(1,-20,0,20)
+                warn.Position = UDim2.new(0,10,0,12)
+                warn.BackgroundTransparency = 1
+                warn.Font = Enum.Font.GothamBold; warn.TextSize = 11
+                warn.TextColor3 = Color3.fromRGB(220,80,80)
+                warn.Text = "PRIORIDADE DETECTADA"
+                warn.TextXAlignment = Enum.TextXAlignment.Left
+
+                local nameLbl = Instance.new("TextLabel",box)
+                nameLbl.Size = UDim2.new(1,-20,0,22)
+                nameLbl.Position = UDim2.new(0,10,0,34)
+                nameLbl.BackgroundTransparency = 1
+                nameLbl.Font = Enum.Font.GothamBlack; nameLbl.TextSize = 13
+                nameLbl.TextColor3 = Color3.fromRGB(210,210,210)
+                nameLbl.Text = petName
+                nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+                local sub = Instance.new("TextLabel",box)
+                sub.Size = UDim2.new(1,-20,0,14)
+                sub.Position = UDim2.new(0,10,0,56)
+                sub.BackgroundTransparency = 1
+                sub.Font = Enum.Font.GothamMedium; sub.TextSize = 10
+                sub.TextColor3 = Color3.fromRGB(120,120,120)
+                sub.Text = "Tem certeza que quer vender?"
+                sub.TextXAlignment = Enum.TextXAlignment.Left
+
+                local confirmBtn = Instance.new("TextButton",box)
+                confirmBtn.Size = UDim2.new(0,110,0,28)
+                confirmBtn.Position = UDim2.new(0,10,1,-38)
+                confirmBtn.BackgroundColor3 = Color3.fromRGB(160,50,50)
+                confirmBtn.BorderSizePixel = 0
+                confirmBtn.Font = Enum.Font.GothamBlack; confirmBtn.TextSize = 11
+                confirmBtn.TextColor3 = Color3.new(1,1,1)
+                confirmBtn.Text = "VENDER MESMO ASSIM"
+                confirmBtn.AutoButtonColor = false
+                Instance.new("UICorner",confirmBtn).CornerRadius = UDim.new(0,7)
+
+                local cancelBtn = Instance.new("TextButton",box)
+                cancelBtn.Size = UDim2.new(0,80,0,28)
+                cancelBtn.Position = UDim2.new(1,-90,1,-38)
+                cancelBtn.BackgroundColor3 = Color3.fromRGB(38,38,38)
+                cancelBtn.BorderSizePixel = 0
+                cancelBtn.Font = Enum.Font.GothamBold; cancelBtn.TextSize = 11
+                cancelBtn.TextColor3 = Color3.fromRGB(180,180,180)
+                cancelBtn.Text = "CANCELAR"
+                cancelBtn.AutoButtonColor = false
+                Instance.new("UICorner",cancelBtn).CornerRadius = UDim.new(0,7)
+
+                local result = nil
+                confirmBtn.MouseButton1Click:Connect(function() result = true end)
+                cancelBtn.MouseButton1Click:Connect(function() result = false end)
+                confirmBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch then result=true end end)
+                cancelBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch then result=false end end)
+
+                -- Esperar resposta
+                local t = 0
+                while result == nil and t < 15 do task.wait(0.05); t = t + 0.05 end
+                sg:Destroy()
+                callback(result == true)
+            end
+
+            local sold, skipped = 0, 0
+            local pendingEntries = {}
+
+            -- Coletar tudo que passaria nos filtros
+            for _, podium in ipairs(podiums:GetChildren()) do
+                local pNum = tonumber(podium.Name)
+                if pNum then
+                    local base = podium:FindFirstChild("Base")
+                    local spn  = base and base:FindFirstChild("Spawn")
+                    local att  = spn  and spn:FindFirstChild("PromptAttachment")
+                    if att then
+                        for _, pp in ipairs(att:GetChildren()) do
+                            if pp:IsA("ProximityPrompt") and pp.Enabled
+                            and (pp.ActionText or ""):sub(1,4) == "Sell" then
+                                local info = rsGetData and rsGetData(plot, pNum) or nil
+                                local gv   = (info and info.genVal) or 0
+                                local rar  = nil
+                                if info and rsAD then
+                                    local aInfo = rsAD[info.name] or rsAD[(info.rawIndex or "")]
+                                    if aInfo then rar = aInfo.Rarity end
+                                end
+                                local passMin = Config.SmartSellMinValue <= 0 or gv >= Config.SmartSellMinValue
+                                local passMax = Config.SmartSellMaxValue <= 0 or gv <= Config.SmartSellMaxValue
+                                local passRar = #Config.SmartSellRarities == 0 or (rar and isRarSel(rar))
+                                if passMin and passMax and passRar then
+                                    table.insert(pendingEntries, {pp=pp, name=info and info.name or ""})
+                                else
+                                    skipped = skipped + 1
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            -- Processar entries, pedindo confirmação para os da priority list
+            local i = 1
+            local function processNext()
+                if i > #pendingEntries then
+                    statusLbl.Text = sold.." vendidos · "..skipped.." ignorados"
+                    sellNowBtn.Text = "VENDER AGORA"
+                    return
+                end
+                local entry = pendingEntries[i]; i = i + 1
+                if isInPriority(entry.name) then
+                    askConfirm(entry.name, function(confirmed)
+                        if confirmed then
+                            pcall(fireproximityprompt, entry.pp)
+                            sold = sold + 1
+                            task.wait(0.25)
+                        else
+                            skipped = skipped + 1
+                        end
+                        processNext()
+                    end)
+                else
+                    pcall(fireproximityprompt, entry.pp)
+                    sold = sold + 1
+                    task.wait(0.25)
+                    processNext()
+                end
+            end
+            processNext()
+        end
+
+        sellNowBtn.MouseButton1Click:Connect(function()
+            TweenService:Create(sellNowBtn,TweenInfo.new(0.08),{BackgroundColor3=Color3.fromRGB(65,65,65)}):Play()
+            task.delay(0.15,function() TweenService:Create(sellNowBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(45,45,45)}):Play() end)
+            task.spawn(doSmartSell)
+        end)
+        sellNowBtn.InputBegan:Connect(function(i)
+            if i.UserInputType==Enum.UserInputType.Touch then task.spawn(doSmartSell) end
+        end)
+
+        _G.doSmartSell = doSmartSell
+
+        -- Auto Sell automático: roda doSmartSell quando um animal novo aparece na base
+        if type(Config.AutoSellEnabled) ~= "boolean" then Config.AutoSellEnabled = false end
+
+        local asRow = makeRow(sellS, 17)
+        local asLbl = Instance.new("TextLabel", asRow)
+        asLbl.Size=UDim2.new(1,-54,1,0); asLbl.Position=UDim2.new(0,10,0,0)
+        asLbl.BackgroundTransparency=1; asLbl.Text="Auto Sell (ao receber)"
+        asLbl.Font=Enum.Font.GothamBold; asLbl.TextSize=12
+        asLbl.TextColor3=C().TP; asLbl.TextXAlignment=Enum.TextXAlignment.Left
+
+        local asSw=Instance.new("Frame",asRow); asSw.Size=UDim2.new(0,38,0,20)
+        asSw.Position=UDim2.new(1,-46,0.5,-10)
+        asSw.BackgroundColor3=Config.AutoSellEnabled and Theme.Accent1 or C().SH
+        Instance.new("UICorner",asSw).CornerRadius=UDim.new(1,0)
+        local asDot=Instance.new("Frame",asSw); asDot.Size=UDim2.new(0,15,0,15)
+        asDot.Position=Config.AutoSellEnabled and UDim2.new(1,-17,0.5,-7.5) or UDim2.new(0,2,0.5,-7.5)
+        asDot.BackgroundColor3=Color3.new(1,1,1); Instance.new("UICorner",asDot).CornerRadius=UDim.new(1,0)
+        local asBtn=Instance.new("TextButton",asSw); asBtn.Size=UDim2.new(1,0,1,0)
+        asBtn.BackgroundTransparency=1; asBtn.Text=""; asBtn.ZIndex=4; asBtn.AutoButtonColor=false
+
+        local function togAutoSell()
+            Config.AutoSellEnabled=not Config.AutoSellEnabled; SaveConfig()
+            TweenService:Create(asDot,TweenInfo.new(0.15),{Position=Config.AutoSellEnabled and UDim2.new(1,-17,0.5,-7.5) or UDim2.new(0,2,0.5,-7.5)}):Play()
+            TweenService:Create(asSw,TweenInfo.new(0.15),{BackgroundColor3=Config.AutoSellEnabled and Theme.Accent1 or C().SH}):Play()
+        end
+        asBtn.MouseButton1Click:Connect(togAutoSell)
+        asBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch then togAutoSell() end end)
+
+        -- Watcher: detecta novo animal na base e dispara sell
+        task.spawn(function()
+            local lastCount = 0
+            while true do
+                task.wait(2)
+                if not Config.AutoSellEnabled then lastCount = 0; continue end
+                local plot = rsFindPlot and rsFindPlot()
+                if not plot then lastCount = 0; continue end
+                local podiums = plot:FindFirstChild("AnimalPodiums")
+                if not podiums then lastCount = 0; continue end
+                local count = 0
+                for _, pod in ipairs(podiums:GetChildren()) do
+                    if tonumber(pod.Name) then
+                        local base = pod:FindFirstChild("Base")
+                        local spn = base and base:FindFirstChild("Spawn")
+                        local att = spn and spn:FindFirstChild("PromptAttachment")
+                        if att then
+                            for _, pp in ipairs(att:GetChildren()) do
+                                if pp:IsA("ProximityPrompt") and pp.Enabled and (pp.ActionText or ""):sub(1,4)=="Sell" then
+                                    count = count + 1
+                                end
+                            end
+                        end
+                    end
+                end
+                if count > lastCount and lastCount > 0 then
+                    task.wait(0.5)
+                    task.spawn(doSmartSell)
+                end
+                lastCount = count
+            end
+        end)
+    end
+
     switchTab2("act")
 
     -- Expor ref global
     _G.BullysSettingsUI = {panel=panel, switchTab=switchTab2, currentTab="cfg"}
 end
 task.spawn(buildBullysSettingsUI)
+
+-- ═══════════════════════════════════════════════════════════
+-- ── FAVORITOS ───────────────────────────────────────────────
+-- ═══════════════════════════════════════════════════════════
+do
+    if type(Config.FavoritePets) ~= "table" then Config.FavoritePets = {} end
+
+    local function isFavorite(name)
+        if not name then return false end
+        local nl = name:lower()
+        for _, v in ipairs(Config.FavoritePets) do
+            if v:lower() == nl then return true end
+        end
+        return false
+    end
+
+    local function toggleFavorite(name)
+        if not name then return end
+        local nl = name:lower()
+        if isFavorite(name) then
+            local new = {}
+            for _, v in ipairs(Config.FavoritePets) do
+                if v:lower() ~= nl then table.insert(new, v) end
+            end
+            Config.FavoritePets = new
+        else
+            table.insert(Config.FavoritePets, name)
+        end
+        SaveConfig()
+    end
+
+    -- Expor globalmente para uso na lista de pets
+    _G.IsFavoritePet   = isFavorite
+    _G.ToggleFavoritePet = toggleFavorite
+
+    -- Patch em get_all_pets: favoritos sempre no topo
+    -- Fazemos isso interceptando SharedState.AllAnimalsCache via wrapper
+    task.spawn(function()
+        task.wait(2)
+        -- Adicionar estrela de favorito nos pet buttons da lista de steal
+        -- Monitorar quando a lista é redesenhada e injetar botão de favorito
+        while true do
+            task.wait(0.8)
+            local autoStealGui = PlayerGui:FindFirstChild("AutoStealUI")
+            if not autoStealGui then continue end
+            local listFrame = autoStealGui:FindFirstChildWhichIsA("ScrollingFrame", true)
+            if not listFrame then continue end
+            for _, btn in ipairs(listFrame:GetChildren()) do
+                if btn:IsA("TextButton") and not btn:FindFirstChild("FavStar") then
+                    -- Tentar pegar o nome do pet do infoLabel
+                    local infoLbl = btn:FindFirstChildWhichIsA("TextLabel")
+                    local petName = nil
+                    if infoLbl then
+                        petName = infoLbl.Text:gsub("<[^>]+>", ""):match("^%s*(.-)%s*$")
+                    end
+                    if petName and petName ~= "" then
+                        local star = Instance.new("TextButton", btn)
+                        star.Name = "FavStar"
+                        star.Size = UDim2.new(0, 18, 0, 18)
+                        star.Position = UDim2.new(1, -90, 0.5, -9)
+                        star.BackgroundTransparency = 1
+                        star.BorderSizePixel = 0
+                        star.Font = Enum.Font.GothamBlack
+                        star.TextSize = 14
+                        star.ZIndex = 5
+                        star.AutoButtonColor = false
+                        star.Text = isFavorite(petName) and "★" or "☆"
+                        star.TextColor3 = isFavorite(petName) and Color3.fromRGB(255,200,50) or Color3.fromRGB(80,80,80)
+
+                        local captured = petName
+                        star.MouseButton1Click:Connect(function()
+                            toggleFavorite(captured)
+                            star.Text = isFavorite(captured) and "★" or "☆"
+                            star.TextColor3 = isFavorite(captured) and Color3.fromRGB(255,200,50) or Color3.fromRGB(80,80,80)
+                        end)
+                        star.InputBegan:Connect(function(inp)
+                            if inp.UserInputType == Enum.UserInputType.Touch then
+                                star.MouseButton1Click:Fire()
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- ── AUTO UNLOCK INTELIGENTE ─────────────────────────────────
+-- ═══════════════════════════════════════════════════════════
+do
+    if type(Config.SmartUnlockEnabled) ~= "boolean" then Config.SmartUnlockEnabled = false end
+
+    -- Descobre todos os itens de unlock do meu plot em ordem de altura
+    local function getMyUnlockItems()
+        local plots = Workspace:FindFirstChild("Plots")
+        if not plots then return {} end
+        local myPlot = nil
+        for _, p in ipairs(plots:GetChildren()) do
+            local sign = p:FindFirstChild("PlotSign")
+            if sign then
+                local yb = sign:FindFirstChild("YourBase")
+                if yb and yb:IsA("BillboardGui") and yb.Enabled then
+                    myPlot = p; break
+                end
+            end
+        end
+        if not myPlot then return {} end
+
+        local unlockFolder = myPlot:FindFirstChild("Unlock")
+        if not unlockFolder then return {} end
+
+        local items = {}
+        for _, item in ipairs(unlockFolder:GetChildren()) do
+            local pos = item:IsA("BasePart") and item.Position
+                     or (item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Position)
+            if pos then
+                -- Verificar se tem ProximityPrompt ativo (ainda não desbloqueado)
+                for _, desc in ipairs(item:GetDescendants()) do
+                    if desc:IsA("ProximityPrompt") and desc.Enabled then
+                        table.insert(items, {prompt = desc, height = pos.Y, name = item.Name})
+                        break
+                    end
+                end
+            end
+        end
+        -- Ordenar por altura (de baixo para cima = ordem correta)
+        table.sort(items, function(a, b) return a.height < b.height end)
+        return items
+    end
+
+    -- Desbloquear tudo na ordem certa
+    local _unlocking = false
+    local function doSmartUnlock()
+        if _unlocking then return end
+        _unlocking = true
+        local items = getMyUnlockItems()
+        if #items == 0 then _unlocking = false; return end
+        for _, item in ipairs(items) do
+            if item.prompt and item.prompt.Enabled and item.prompt.Parent then
+                pcall(fireproximityprompt, item.prompt)
+                task.wait(0.4)
+            end
+        end
+        _unlocking = false
+    end
+    _G.doSmartUnlock = doSmartUnlock
+
+    -- Auto unlock: roda quando você começa a roubar (attribute Stealing)
+    LocalPlayer:GetAttributeChangedSignal("Stealing"):Connect(function()
+        if Config.SmartUnlockEnabled and LocalPlayer:GetAttribute("Stealing") then
+            task.delay(0.3, function()
+                task.spawn(doSmartUnlock)
+            end)
+        end
+    end)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- ── MODO SILENCIOSO ─────────────────────────────────────────
+-- ═══════════════════════════════════════════════════════════
+do
+    local SILENT_GUIS = {
+        "AutoStealUI", "XiAdminPanel", "BullysSettings",
+        "BullysStatusHUD", "BullysMiniActions", "BullysAutoBuyUI",
+        "NotzhubMobileButtons", "WSQuickActions", "WSMiniDesync",
+        "WSTeamESP", "XiStealingHUD", "XiStealingPlotESP",
+    }
+
+    local _silentMode = false
+    local _savedStates = {}
+
+    local function setSilentMode(on)
+        _silentMode = on
+        for _, name in ipairs(SILENT_GUIS) do
+            local gui = PlayerGui:FindFirstChild(name)
+            if gui then
+                if on then
+                    _savedStates[name] = gui.Enabled
+                    gui.Enabled = false
+                else
+                    gui.Enabled = _savedStates[name] ~= false
+                end
+            end
+        end
+    end
+
+    _G.toggleSilentMode = function()
+        setSilentMode(not _silentMode)
+        return _silentMode
+    end
+    _G.getSilentMode = function() return _silentMode end
+end
 
 -- ── NOTZHUB MOBILE BUTTONS (TP + Settings) ──────────────────────
 if IS_MOBILE then
@@ -10884,6 +11661,29 @@ if IS_MOBILE then
                 else
                     instantClone()
                 end
+            end
+        )
+
+        -- Botão Modo Silencioso
+        local silentFrame = makeFloatBtn(
+            "MobileSilent", "👁", "SILENT",
+            0.88, 0.50,
+            function()
+                if _G.toggleSilentMode then
+                    local on = _G.toggleSilentMode()
+                    -- Atualizar visual do botão
+                    local lbl = silentFrame and silentFrame:FindFirstChildWhichIsA("TextLabel")
+                    if lbl then lbl.Text = on and "🚫" or "👁" end
+                end
+            end
+        )
+
+        -- Botão Smart Unlock
+        makeFloatBtn(
+            "MobileUnlock", "🔓", "UNLOCK",
+            0.88, 0.64,
+            function()
+                if _G.doSmartUnlock then task.spawn(_G.doSmartUnlock) end
             end
         )
     end)
@@ -13192,46 +13992,37 @@ task.spawn(function()
                                     local char = LocalPlayer.Character
                                     local hrp = char and char:FindFirstChild("HumanoidRootPart")
                                     if not hrp then return end
-                                    -- Tenta pegar DeliveryHitbox do plot (posição real da base)
+                                    -- plot já capturado no upvalue desta closure
                                     local targetPos = nil
-                                    if plot then
-                                        local dh = plot:FindFirstChild("DeliveryHitbox")
-                                        if dh and dh:IsA("BasePart") then
-                                            targetPos = dh.Position + Vector3.new(0, 6, 0)
+                                    if plot and plot.Parent then
+                                        -- Tenta AnimalPodiums primeiro (onde ficam os brainrots)
+                                        local ap = plot:FindFirstChild("AnimalPodiums")
+                                        if ap then
+                                            targetPos = ap.Position + Vector3.new(0, 5, 0)
+                                        end
+                                        -- Fallback: DeliveryHitbox
+                                        if not targetPos then
+                                            local dh = plot:FindFirstChild("DeliveryHitbox")
+                                            if dh then targetPos = dh.Position + Vector3.new(0, 5, 0) end
+                                        end
+                                        -- Fallback: PrimaryPart do plot
+                                        if not targetPos and plot.PrimaryPart then
+                                            targetPos = plot.PrimaryPart.Position + Vector3.new(0, 5, 0)
                                         end
                                     end
-                                    -- Fallback para a part do sign
-                                    if not targetPos and part and part.Parent then
-                                        targetPos = part.Position + Vector3.new(0, 6, 0)
+                                    -- Último fallback: posição do PlotSign (part)
+                                    if not targetPos then
+                                        targetPos = part.Position + Vector3.new(0, 5, 0)
                                     end
-                                    if targetPos then
-                                        hrp.CFrame = CFrame.new(targetPos)
-                                        ShowNotification("tp", plr.DisplayName)
-                                    end
+                                    hrp.CFrame = CFrame.new(targetPos)
                                 end)
                                 tpBtn.InputBegan:Connect(function(inp)
                                     if inp.UserInputType == Enum.UserInputType.Touch then
-                                        local char = LocalPlayer.Character
-                                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                                        if not hrp then return end
-                                        local targetPos = nil
-                                        if plot then
-                                            local dh = plot:FindFirstChild("DeliveryHitbox")
-                                            if dh and dh:IsA("BasePart") then
-                                                targetPos = dh.Position + Vector3.new(0, 6, 0)
-                                            end
-                                        end
-                                        if not targetPos and part and part.Parent then
-                                            targetPos = part.Position + Vector3.new(0, 6, 0)
-                                        end
-                                        if targetPos then
-                                            hrp.CFrame = CFrame.new(targetPos)
-                                            ShowNotification("tp", plr.DisplayName)
-                                        end
+                                        tpBtn.MouseButton1Click:Fire()
                                     end
                                 end)
 
-                                byUser[plr.UserId] = { bill = bb, adornee = part, stealKey = stealKey }
+                                byUser[plr.UserId] = { bill = bb, adornee = part, stealKey = stealKey, plot = plot }
                             else
                                 row = byUser[plr.UserId]
                                 if row and row.bill and row.bill.Parent then
