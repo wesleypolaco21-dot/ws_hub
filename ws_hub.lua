@@ -1,5 +1,5 @@
 -- ╔══════════════════════════════════════╗
--- ║         WS HUB  •  v2.0             ║
+-- ║         WS HUB  •  v2.3             ║
 -- ║         @o_escolhido                ║
 -- ╚══════════════════════════════════════╝
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -787,7 +787,71 @@ local function AddMobileMinimizeAdmin(frame, labelText)
     end)
 end
 
-local function ShowNotification(title, text, duration) end
+-- ── WS NOTIFICATION SYSTEM ──────────────────────────────────────
+do
+    local _notifGui, _queue, _running = nil, {}, false
+
+    local function getGui()
+        if _notifGui and _notifGui.Parent then return _notifGui end
+        local sg = Instance.new("ScreenGui")
+        sg.Name = "BullysNotif"; sg.ResetOnSpawn = false
+        sg.IgnoreGuiInset = true; sg.DisplayOrder = 9999
+        sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        sg.Parent = PlayerGui
+        _notifGui = sg; return sg
+    end
+
+    local function process()
+        if _running or #_queue == 0 then return end
+        _running = true
+        local d = table.remove(_queue, 1)
+        local gui = getGui()
+
+        local f = Instance.new("Frame")
+        f.AnchorPoint = Vector2.new(0.5, 0)
+        f.Position = UDim2.new(0.5, 0, 0, 14)
+        f.Size = UDim2.new(0, 220, 0, 44)
+        f.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        f.BackgroundTransparency = 1
+        f.BorderSizePixel = 0; f.ZIndex = 100
+        f.Parent = gui
+        Instance.new("UICorner", f).CornerRadius = UDim.new(0, 22)
+        local stroke = Instance.new("UIStroke", f)
+        stroke.Color = Color3.fromRGB(60,60,60); stroke.Thickness = 1; stroke.Transparency = 1
+
+        local t1 = Instance.new("TextLabel", f)
+        t1.Size = UDim2.new(1,-20,0,13); t1.Position = UDim2.new(0,10,0,5)
+        t1.BackgroundTransparency = 1; t1.Font = Enum.Font.GothamMedium; t1.TextSize = 9
+        t1.TextColor3 = Color3.fromRGB(100,100,100)
+        t1.TextXAlignment = Enum.TextXAlignment.Left; t1.TextTruncate = Enum.TextTruncate.AtEnd
+        t1.Text = (d.title or ""):upper(); t1.ZIndex = 101
+
+        local t2 = Instance.new("TextLabel", f)
+        t2.Size = UDim2.new(1,-20,0,18); t2.Position = UDim2.new(0,10,0,19)
+        t2.BackgroundTransparency = 1; t2.Font = Enum.Font.GothamBold; t2.TextSize = 13
+        t2.TextColor3 = Color3.fromRGB(210,210,210)
+        t2.TextXAlignment = Enum.TextXAlignment.Left; t2.TextTruncate = Enum.TextTruncate.AtEnd
+        t2.Text = d.text or ""; t2.ZIndex = 101
+
+        TweenService:Create(f, TweenInfo.new(0.2), {BackgroundTransparency=0.08}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency=0.2}):Play()
+
+        task.delay(d.duration or 2.2, function()
+            TweenService:Create(f, TweenInfo.new(0.25), {BackgroundTransparency=1}):Play()
+            TweenService:Create(stroke, TweenInfo.new(0.25), {Transparency=1}):Play()
+            task.delay(0.3, function()
+                pcall(function() f:Destroy() end)
+                _running = false; process()
+            end)
+        end)
+    end
+
+    function ShowNotification(title, text, duration)
+        table.insert(_queue, {title=title or "", text=text or "", duration=duration or 2.2})
+        task.spawn(process)
+    end
+end
+-- ── FIM NOTIFICATION SYSTEM ──────────────────────────────────────
 
 local function isPlayerCharacter(model)
     return Players:GetPlayerFromCharacter(model) ~= nil
@@ -5459,7 +5523,7 @@ local function runAutoSnipe()
         end
         if bestEntry then targetPetData=bestEntry
         else
-            if not SharedState.SelectedPetData then ShowNotification("ERROR","No target selected!"); return end
+            if not SharedState.SelectedPetData then ShowNotification("AVISO", "Selecione um alvo"); return end
             targetPetData=SharedState.SelectedPetData.animalData
         end
     else
@@ -5832,7 +5896,7 @@ _G.runAutoSnipe = runAutoSnipe
 end)()
 
 local function executeReset()
-    ShowNotification("reset", "reiniciando...")
+    ShowNotification("RESET", "Reiniciando personagem...")
     local plr = LocalPlayer
     if not plr then return end
 
@@ -5942,7 +6006,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
             _carpetStatusLabel.Text = carpetSpeedEnabled and "ON" or "OFF"
             _carpetStatusLabel.TextColor3 = carpetSpeedEnabled and Theme.Success or Theme.Error
         end
-        ShowNotification("carpet", carpetSpeedEnabled and Config.TpSettings.Tool or "desligado")
+        ShowNotification("CARPET SPEED", carpetSpeedEnabled and "ON  ·  " .. Config.TpSettings.Tool or "OFF")
     end
 
     if input.KeyCode == stealSpeedKey then
@@ -8028,7 +8092,7 @@ task.spawn(function()
         authors.Size = UDim2.new(0, 150, 1, 0)
         authors.Position = UDim2.new(0, 122, 0, 0)
         authors.BackgroundTransparency = 1
-        authors.Text = "@o_escolhido  •  v2.0"
+        authors.Text = "@o_escolhido  •  v2.3"
         authors.Font = Enum.Font.GothamBold
         authors.TextSize = 10
         authors.TextColor3 = Theme.TextSecondary
@@ -9185,11 +9249,15 @@ task.spawn(function()
             end
             
             if stolenData then
-    local name, gen, mut = GetInfo(stolenData)
-
-    SendWebhook(name, gen, mut)
+                local name, gen, mut = GetInfo(stolenData)
+                SendWebhook(name, gen, mut)
+                -- Notificação de roubo bem-sucedido
+                local notifText = (name or "?")
+                if gen and gen ~= "" then notifText = notifText .. "  ·  " .. gen end
+                if mut and mut ~= "" and mut ~= "None" then notifText = notifText .. "  ·  " .. mut end
+                ShowNotification("ROUBADO", notifText)
                 if Config.AutoTpOnFailedSteal and stealDuration > 3 and distanceMoved > 60 then
-                    ShowNotification("roubo", "falhou · retentando")
+                    ShowNotification("ROUBO", "falhou · retentando")
                     task.spawn(runAutoSnipe)
                 end
             end
@@ -10319,6 +10387,7 @@ function buildBullysSettingsUI()
     makeSec(mS,"AUTO UNLOCK",28)
     makeToggle(mS,"Auto Unlock on Steal",function() return Config.AutoUnlockOnSteal end,function(v) Config.AutoUnlockOnSteal=v; SaveConfig() end,281)
     makeToggle(mS,"Smart Unlock (ordem correta)",function() return Config.SmartUnlockEnabled end,function(v) Config.SmartUnlockEnabled=v; SaveConfig() end,282)
+    makeToggle(mS,"Anti Sentry / Torreta",function() return Config.AntiSentryEnabled end,function(v) if _G.setAntiSentry then _G.setAntiSentry(v) else Config.AntiSentryEnabled=v; SaveConfig() end end,283)
     makeSec(mS,"AUTOMATION",30)
     makeToggle(mS,"Auto Invis no Steal",function() return Config.AutoInvisDuringSteal end,function(v) Config.AutoInvisDuringSteal=v; _G.AutoInvisDuringSteal=v; SaveConfig() end,31)
     makeToggle(mS,"Auto Kick no Steal",function() return Config.AutoKickOnSteal end,function(v) if _G.setAutoKickFromSettings then _G.setAutoKickFromSettings(v) else Config.AutoKickOnSteal=v; SaveConfig() end end,32)
@@ -11457,235 +11526,334 @@ do
 
     _G.toggleSilentMode = function()
         setSilentMode(not _silentMode)
+        ShowNotification("MODO SILENCIOSO", _silentMode and "Ativado" or "Desativado")
         return _silentMode
     end
     _G.getSilentMode = function() return _silentMode end
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- ── ANTI SENTRY / TORRETA ───────────────────────────────────
+-- ═══════════════════════════════════════════════════════════
+do
+    if type(Config.AntiSentryEnabled) ~= "boolean" then Config.AntiSentryEnabled = false end
+
+    local DETECTION_DISTANCE = 60
+    local PULL_DISTANCE = -5
+    local _sentryTarget = nil
+    local _sentryConn = nil
+
+    local function getSentryWeapon()
+        local char = LocalPlayer.Character
+        if not char then return nil end
+        return LocalPlayer.Backpack:FindFirstChild("Bat") or char:FindFirstChild("Bat")
+    end
+
+    local function findSentry()
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+        local rootPos = char.HumanoidRootPart.Position
+        for _, obj in pairs(Workspace:GetChildren()) do
+            if obj.Name:find("Sentry") and not obj.Name:lower():find("bullet") then
+                local ownerId = obj.Name:match("Sentry_(%d+)")
+                if ownerId and tonumber(ownerId) == LocalPlayer.UserId then continue end
+                local part = obj:IsA("BasePart") and obj
+                    or obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart"))
+                if part and (rootPos - part.Position).Magnitude <= DETECTION_DISTANCE then
+                    return obj
+                end
+            end
+        end
+        return nil
+    end
+
+    local function moveSentry(obj)
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        for _, part in pairs(obj:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+        local root = char.HumanoidRootPart
+        local cf = root.CFrame * CFrame.new(0, 0, PULL_DISTANCE)
+        if obj:IsA("BasePart") then
+            obj.CFrame = cf
+        elseif obj:IsA("Model") then
+            local main = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+            if main then main.CFrame = cf end
+        end
+    end
+
+    local function attackSentry()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        local weapon = getSentryWeapon()
+        if not weapon then return end
+        if weapon.Parent == LocalPlayer.Backpack then
+            hum:EquipTool(weapon); task.wait(0.1)
+        end
+        local handle = weapon:FindFirstChild("Handle")
+        if handle then handle.CanCollide = false end
+        pcall(function() weapon:Activate() end)
+        for _, r in pairs(weapon:GetDescendants()) do
+            if r:IsA("RemoteEvent") then pcall(function() r:FireServer() end) end
+        end
+    end
+
+    local function startAntiSentry()
+        if _sentryConn then return end
+        _sentryConn = RunService.Heartbeat:Connect(function()
+            if not Config.AntiSentryEnabled then return end
+            if _sentryTarget and _sentryTarget.Parent == Workspace then
+                moveSentry(_sentryTarget)
+                attackSentry()
+            else
+                local prev = _sentryTarget
+                _sentryTarget = findSentry()
+                if _sentryTarget and _sentryTarget ~= prev then
+                    ShowNotification("ANTI SENTRY", "Torreta detectada · destruindo")
+                end
+            end
+        end)
+    end
+
+    local function stopAntiSentry()
+        if _sentryConn then _sentryConn:Disconnect(); _sentryConn = nil end
+        _sentryTarget = nil
+    end
+
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if Config.AntiSentryEnabled then startAntiSentry() else stopAntiSentry() end
+    end)
+
+    if Config.AntiSentryEnabled then startAntiSentry() end
+
+    _G.setAntiSentry = function(v)
+        Config.AntiSentryEnabled = v; SaveConfig()
+        if v then startAntiSentry() else stopAntiSentry() end
+        ShowNotification("ANTI SENTRY", v and "Ativado" or "Desativado")
+    end
+    _G.getAntiSentry = function() return Config.AntiSentryEnabled end
+
+    -- Toggle na aba Movement do settings
+    task.defer(function()
+        if not _G.BullysSettingsUI then return end
+        -- Será adicionado via makeToggle na próxima rebuild do settings
+    end)
+end
+
 -- ── NOTZHUB MOBILE BUTTONS (TP + Settings) ──────────────────────
 if IS_MOBILE then
     task.spawn(function()
-        task.wait(2) -- wait for PlayerGui to be ready
+        task.wait(2)
 
         local mbGui = Instance.new("ScreenGui")
         mbGui.Name = "NotzhubMobileButtons"
         mbGui.ResetOnSpawn = false
         mbGui.DisplayOrder = 50
+        mbGui.IgnoreGuiInset = true
         mbGui.Parent = PlayerGui
 
-        local BTN_SIZE = 56
-        local CORNER   = UDim.new(0, 14)
-        local BG       = Color3.fromRGB(10, 4, 4)
-        local ACC      = Color3.fromRGB(220, 30, 30)
-        local TXT      = Color3.fromRGB(255, 230, 230)
+        -- ── Dock vertical arrastável ──────────────────────────────
+        local DOCK_W   = 58
+        local BTN_H    = 46
+        local BTN_GAP  = 4
+        local PAD      = 6
 
-        -- Helper: create a draggable floating button
-        local function makeFloatBtn(name, label, subLabel, xScale, yScale, onTap)
-            local frame = Instance.new("Frame", mbGui)
-            frame.Name = name
-            frame.Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)
-            frame.Position = UDim2.new(xScale, 0, yScale, 0)
-            frame.BackgroundColor3 = BG
-            frame.BackgroundTransparency = 0.08
-            frame.BorderSizePixel = 0
-            frame.Active = true
-            Instance.new("UICorner", frame).CornerRadius = CORNER
-            local stroke = Instance.new("UIStroke", frame)
-            stroke.Color = ACC; stroke.Thickness = 2; stroke.Transparency = 0.2
+        local BUTTONS = {
+            { id="tp",     label="TP",      sub="carpet" },
+            { id="clone",  label="CLONE",   sub="clone"  },
+            { id="carpet", label="CARPET",  sub="speed"  },
+            { id="cfg",    label="CFG",     sub="config" },
+            { id="unlock", label="UNLOCK",  sub="unlock" },
+            { id="silent", label="SILENT",  sub="hide"   },
+        }
 
-            local lbl = Instance.new("TextLabel", frame)
-            lbl.Size = UDim2.new(1,0,0.55,0)
-            lbl.Position = UDim2.new(0,0,0.08,0)
-            lbl.BackgroundTransparency = 1
-            lbl.Text = label
-            lbl.Font = Enum.Font.GothamBlack
-            lbl.TextSize = 18
-            lbl.TextColor3 = ACC
-            lbl.TextXAlignment = Enum.TextXAlignment.Center
+        local DOCK_H = PAD*2 + #BUTTONS * BTN_H + (#BUTTONS-1) * BTN_GAP
 
-            local sub = Instance.new("TextLabel", frame)
-            sub.Size = UDim2.new(1,-4,0,16)
-            sub.Position = UDim2.new(0,2,1,-18)
-            sub.BackgroundTransparency = 1
-            sub.Text = subLabel
-            sub.Font = Enum.Font.GothamBold
-            sub.TextSize = 9
-            sub.TextColor3 = TXT
-            sub.TextXAlignment = Enum.TextXAlignment.Center
+        local dock = Instance.new("Frame", mbGui)
+        dock.Name = "MobileDock"
+        dock.Size = UDim2.new(0, DOCK_W, 0, DOCK_H)
+        dock.Position = UDim2.new(1, -(DOCK_W+8), 0.3, 0)
+        dock.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+        dock.BackgroundTransparency = 0.06
+        dock.BorderSizePixel = 0
+        Instance.new("UICorner", dock).CornerRadius = UDim.new(0, 14)
+        local dockStroke = Instance.new("UIStroke", dock)
+        dockStroke.Color = Color3.fromRGB(55,55,55)
+        dockStroke.Thickness = 1
+        dockStroke.Transparency = 0.2
 
-            -- Input state — por input object para evitar conflito entre toques
-            local activeInput   = nil   -- o InputObject do toque atual
-            local touchStart    = nil   -- Vector3 posição inicial
-            local frameStart    = nil   -- UDim2 posição do frame ao iniciar
-            local didDrag       = false -- se o dedo se moveu além do threshold
-            local DRAG_THRESH   = 18    -- pixels para considerar drag (maior = mais fácil de dar tap)
+        -- Drag da dock inteira
+        local _dDrag, _dStart, _dPos = false, nil, nil
+        local DRAG_THRESH = 10
 
-            local function onPress()
-                TweenService:Create(frame, TweenInfo.new(0.07), {BackgroundTransparency = 0.5}):Play()
-                TweenService:Create(stroke, TweenInfo.new(0.07), {Transparency = 0.7}):Play()
-            end
-            local function onRelease()
-                TweenService:Create(frame, TweenInfo.new(0.12), {BackgroundTransparency = 0.08}):Play()
-                TweenService:Create(stroke, TweenInfo.new(0.12), {Transparency = 0.2}):Play()
-            end
-
-            frame.InputBegan:Connect(function(inp)
-                if inp.UserInputType ~= Enum.UserInputType.Touch then return end
-                if activeInput then return end  -- ignora segundo dedo
-                activeInput = inp
-                touchStart  = inp.Position
-                frameStart  = frame.Position
-                didDrag     = false
-                onPress()
-            end)
-
-            -- Movimento: usa UserInputService para rastrear o input correto
-            UserInputService.InputChanged:Connect(function(inp)
-                if inp ~= activeInput then return end
-                if inp.UserInputType ~= Enum.UserInputType.Touch then return end
-                local delta = inp.Position - touchStart
-                if delta.Magnitude > DRAG_THRESH then
-                    didDrag = true
-                    -- Move o botão com o dedo
-                    frame.Position = UDim2.new(
-                        frameStart.X.Scale, frameStart.X.Offset + delta.X,
-                        frameStart.Y.Scale, frameStart.Y.Offset + delta.Y
-                    )
-                end
-            end)
-
-            UserInputService.InputEnded:Connect(function(inp)
-                if inp ~= activeInput then return end
-                if inp.UserInputType ~= Enum.UserInputType.Touch then return end
-                onRelease()
-                if not didDrag then
-                    -- Foi tap limpo — executa ação
-                    task.defer(function() pcall(onTap) end)
-                end
-                activeInput = nil
-                touchStart  = nil
-                frameStart  = nil
-                didDrag     = false
-            end)
-
-            return frame
-        end
-
-        -- ── BOTÃO TP ─────────────────────────────────────────────
-        makeFloatBtn(
-            "MobileTP", "⚡", "TP",
-            0.88, 0.55,
-            function()
-                -- Executa exatamente igual à tecla TP do teclado
-                if _G.tpToBestBrainrot then
-                    pcall(_G.tpToBestBrainrot)
-                else
-                    pcall(runAutoSnipe)
-                end
-            end
-        )
-
-        -- ── BOTÃO SETTINGS ───────────────────────────────────────
-        makeFloatBtn(
-            "MobileSettings", "⚙", "CFG",
-            0.88, 0.44,
-            function()
-                if _G.BullysSettingsUI and _G.BullysSettingsUI.panel then
-                    local panel = _G.BullysSettingsUI.panel
-                    panel.Visible = not panel.Visible
-                elseif _G.NotzhubSettingsUI and _G.NotzhubSettingsUI.panel then
-                    local panel = _G.NotzhubSettingsUI.panel
-                    panel.Visible = not panel.Visible
-                end
-            end
-        )
-
-        -- ── BOTÃO CARPET SPEED ───────────────────────────────────
-        local carpetFloatFrame = makeFloatBtn(
-            "MobileCarpet", "🛸", "CARPET",
-            0.88, 0.33,
-            function()
-                local newState = not State.carpetSpeedEnabled
-                setCarpetSpeed(newState)
-                if _carpetStatusLabel then
-                    _carpetStatusLabel.Text       = newState and "ON" or "OFF"
-                    _carpetStatusLabel.TextColor3 = newState and Theme.Success or Theme.Error
-                end
-                ShowNotification("carpet", newState and Config.TpSettings.Tool or "desligado")
-            end
-        )
-        -- Atualiza cor do botão mobile conforme estado do carpet
-        task.spawn(function()
-            while carpetFloatFrame and carpetFloatFrame.Parent do
-                local on = State.carpetSpeedEnabled
-                TweenService:Create(carpetFloatFrame, TweenInfo.new(0.15), {
-                    BackgroundColor3 = on and Color3.fromRGB(140, 140, 140) or Color3.fromRGB(10, 4, 4)
-                }):Play()
-                local stroke = carpetFloatFrame:FindFirstChildOfClass("UIStroke")
-                if stroke then stroke.Transparency = on and 0 or 0.2 end
-                task.wait(0.3)
+        dock.InputBegan:Connect(function(inp)
+            if inp.UserInputType ~= Enum.UserInputType.Touch then return end
+            _dDrag = false
+            _dStart = inp.Position
+            _dPos = dock.Position
+        end)
+        UserInputService.InputChanged:Connect(function(inp)
+            if not _dStart then return end
+            if inp.UserInputType ~= Enum.UserInputType.Touch then return end
+            local d = inp.Position - _dStart
+            if d.Magnitude > DRAG_THRESH then
+                _dDrag = true
+                dock.Position = UDim2.new(
+                    _dPos.X.Scale, _dPos.X.Offset + d.X,
+                    _dPos.Y.Scale, _dPos.Y.Offset + d.Y
+                )
             end
         end)
+        UserInputService.InputEnded:Connect(function(inp)
+            if inp.UserInputType ~= Enum.UserInputType.Touch then return end
+            _dStart = nil
+        end)
 
-        -- ── BOTÃO CLONE ──────────────────────────────────────────
-        makeFloatBtn(
-            "MobileClone", "📋", "CLONE",
-            0.88, 0.22,
-            function()
-                -- Mesma lógica do CloneKey: dentro da base = clone + TP, fora = só clone
-                local char = LocalPlayer.Character
-                local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-                local inMyBase = false
-                if hrp then
-                    local plots = workspace:FindFirstChild("Plots")
-                    if plots then
-                        for _, plot in ipairs(plots:GetChildren()) do
-                            local sign = plot:FindFirstChild("PlotSign")
-                            local yb   = sign and sign:FindFirstChild("YourBase")
-                            if yb and yb:IsA("BillboardGui") and yb.Enabled then
-                                local ok, dist = pcall(function()
-                                    return (plot:GetPivot().Position - hrp.Position).Magnitude
+        -- Criar botões na dock
+        local btnFrames = {}
+        for i, def in ipairs(BUTTONS) do
+            local y = PAD + (i-1)*(BTN_H+BTN_GAP)
+
+            local btn = Instance.new("TextButton", dock)
+            btn.Name = "Dock_"..def.id
+            btn.Size = UDim2.new(1, -PAD*2, 0, BTN_H)
+            btn.Position = UDim2.new(0, PAD, 0, y)
+            btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            btn.BackgroundTransparency = 0.1
+            btn.BorderSizePixel = 0
+            btn.AutoButtonColor = false
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
+            local bStroke = Instance.new("UIStroke", btn)
+            bStroke.Color = Color3.fromRGB(55,55,55); bStroke.Thickness = 1; bStroke.Transparency = 0.4
+
+            local mainLbl = Instance.new("TextLabel", btn)
+            mainLbl.Size = UDim2.new(1,0,0,20)
+            mainLbl.Position = UDim2.new(0,0,0,5)
+            mainLbl.BackgroundTransparency = 1
+            mainLbl.Font = Enum.Font.GothamBlack
+            mainLbl.TextSize = 11
+            mainLbl.TextColor3 = Color3.fromRGB(200,200,200)
+            mainLbl.Text = def.label
+            mainLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+            local subLbl = Instance.new("TextLabel", btn)
+            subLbl.Size = UDim2.new(1,0,0,12)
+            subLbl.Position = UDim2.new(0,0,1,-14)
+            subLbl.BackgroundTransparency = 1
+            subLbl.Font = Enum.Font.GothamMedium
+            subLbl.TextSize = 8
+            subLbl.TextColor3 = Color3.fromRGB(90,90,90)
+            subLbl.Text = def.sub
+            subLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+            btnFrames[def.id] = {btn=btn, main=mainLbl, sub=subLbl, stroke=bStroke}
+
+            -- Tap: só dispara se não foi drag
+            local _tStart, _tDrag = nil, false
+            btn.InputBegan:Connect(function(inp)
+                if inp.UserInputType ~= Enum.UserInputType.Touch then return end
+                _tStart = inp.Position; _tDrag = false
+                TweenService:Create(btn, TweenInfo.new(0.07), {BackgroundTransparency=0.5}):Play()
+            end)
+            UserInputService.InputChanged:Connect(function(inp)
+                if not _tStart then return end
+                if inp.UserInputType ~= Enum.UserInputType.Touch then return end
+                if (inp.Position - _tStart).Magnitude > DRAG_THRESH then _tDrag = true end
+            end)
+            btn.InputEnded:Connect(function(inp)
+                if inp.UserInputType ~= Enum.UserInputType.Touch then return end
+                TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundTransparency=0.1}):Play()
+                if not _tDrag and not _dDrag then
+                    task.defer(function() pcall(function()
+                        if def.id == "tp" then
+                            local fn = _G.tpToBestBrainrot or tpToBestBrainrot
+                            task.spawn(function() if fn then pcall(fn) else pcall(runAutoSnipe) end end)
+
+                        elseif def.id == "clone" then
+                            local char = LocalPlayer.Character
+                            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+                            local inMyBase = false
+                            if hrp then
+                                local plots = Workspace:FindFirstChild("Plots")
+                                if plots then
+                                    for _, plot in ipairs(plots:GetChildren()) do
+                                        local sign = plot:FindFirstChild("PlotSign")
+                                        local yb = sign and sign:FindFirstChild("YourBase")
+                                        if yb and yb:IsA("BillboardGui") and yb.Enabled then
+                                            local ok2, dist = pcall(function() return (plot:GetPivot().Position - hrp.Position).Magnitude end)
+                                            if ok2 and dist < 120 then inMyBase = true; break end
+                                        end
+                                    end
+                                end
+                            end
+                            if inMyBase then
+                                task.spawn(function()
+                                    instantClone()
+                                    while _G.isCloning do task.wait() end
+                                    local fn2 = _G.tpToBestBrainrot or tpToBestBrainrot
+                                    if fn2 then pcall(fn2) else pcall(runAutoSnipe) end
                                 end)
-                                if ok and dist < 120 then inMyBase = true; break end
+                            else
+                                instantClone()
+                            end
+
+                        elseif def.id == "carpet" then
+                            local newState = not State.carpetSpeedEnabled
+                            setCarpetSpeed(newState)
+                            if _carpetStatusLabel then
+                                _carpetStatusLabel.Text = newState and "ON" or "OFF"
+                                _carpetStatusLabel.TextColor3 = newState and Theme.Success or Theme.Error
+                            end
+                            ShowNotification("CARPET SPEED", newState and "ON  ·  "..Config.TpSettings.Tool or "OFF")
+                            -- Atualizar visual
+                            TweenService:Create(btn, TweenInfo.new(0.15), {
+                                BackgroundColor3 = newState and Color3.fromRGB(50,50,50) or Color3.fromRGB(30,30,30)
+                            }):Play()
+                            TweenService:Create(bStroke, TweenInfo.new(0.15), {
+                                Color = newState and Color3.fromRGB(120,120,120) or Color3.fromRGB(55,55,55)
+                            }):Play()
+
+                        elseif def.id == "cfg" then
+                            if _G.BullysSettingsUI and _G.BullysSettingsUI.panel then
+                                local p = _G.BullysSettingsUI.panel
+                                p.Visible = not p.Visible
+                            end
+
+                        elseif def.id == "unlock" then
+                            if _G.doSmartUnlock then task.spawn(_G.doSmartUnlock) end
+
+                        elseif def.id == "silent" then
+                            if _G.toggleSilentMode then
+                                local on = _G.toggleSilentMode()
+                                mainLbl.Text = on and "SHOW" or "SILENT"
+                                subLbl.Text  = on and "visible" or "hide"
+                                TweenService:Create(btn, TweenInfo.new(0.15), {
+                                    BackgroundColor3 = on and Color3.fromRGB(50,50,50) or Color3.fromRGB(30,30,30)
+                                }):Play()
                             end
                         end
-                    end
+                    end) end)
                 end
-                if inMyBase then
-                    task.spawn(function()
-                        instantClone()
-                        while _G.isCloning do task.wait() end
-                        if _G.tpToBestBrainrot then pcall(_G.tpToBestBrainrot)
-                        else pcall(runAutoSnipe) end
-                    end)
-                else
-                    instantClone()
-                end
-            end
-        )
+                _tStart = nil; _tDrag = false
+            end)
+        end
 
-        -- Botão Modo Silencioso
-        local silentFrame = makeFloatBtn(
-            "MobileSilent", "👁", "SILENT",
-            0.88, 0.50,
-            function()
-                if _G.toggleSilentMode then
-                    local on = _G.toggleSilentMode()
-                    -- Atualizar visual do botão
-                    local lbl = silentFrame and silentFrame:FindFirstChildWhichIsA("TextLabel")
-                    if lbl then lbl.Text = on and "🚫" or "👁" end
+        -- Atualizar estado visual do carpet periodicamente
+        task.spawn(function()
+            while dock and dock.Parent do
+                task.wait(0.4)
+                local carpetBtn = btnFrames["carpet"]
+                if carpetBtn then
+                    local on = State.carpetSpeedEnabled
+                    carpetBtn.btn.BackgroundColor3 = on and Color3.fromRGB(50,50,50) or Color3.fromRGB(30,30,30)
+                    carpetBtn.stroke.Color = on and Color3.fromRGB(120,120,120) or Color3.fromRGB(55,55,55)
                 end
             end
-        )
-
-        -- Botão Smart Unlock
-        makeFloatBtn(
-            "MobileUnlock", "🔓", "UNLOCK",
-            0.88, 0.64,
-            function()
-                if _G.doSmartUnlock then task.spawn(_G.doSmartUnlock) end
-            end
-        )
+        end)
     end)
 end
 
@@ -13425,20 +13593,97 @@ task.spawn(function()
 end)
 
 -- ── RAKNET DESYNC (liga/desliga) ────────────────────────────────
-local _raknetDesyncActive = false
+-- ── RAKNET DESYNC (desktop + mobile Synapse Z) ───────────────────
+local _raknetDesyncActive  = false
+local _raknetHookRegistered = false
+local _raknet = nil
+
+local function _findRaknet()
+    if typeof(raknet) == "table" then return raknet end
+    local ok, fenv = pcall(getfenv)
+    if ok and fenv and typeof(fenv.raknet) == "table" then return fenv.raknet end
+    if typeof(syn) == "table" and typeof(syn.raknet) == "table" then return syn.raknet end
+    return nil
+end
+
+local function _rn_send(packet)
+    if not _raknetDesyncActive then return end
+    local id = packet.PacketId or packet.Id or packet.ID
+    if id ~= 0x1B then return end
+    local ok = pcall(function()
+        local b = packet.AsBuffer
+        buffer.writeu32(b, 1, 0xFFFFFFFF)
+        buffer.writeu32(b, 5, 0xFFFFFFFF)
+        buffer.writeu32(b, 9, 0xFFFFFFFF)
+        packet:SetData(b)
+    end)
+    if not ok then pcall(function()
+        local raw = packet.Data or packet.Buffer or ""
+        if #raw >= 13 then
+            local p = raw:sub(1,1).."ÿÿÿÿ".."ÿÿÿÿ".."ÿÿÿÿ"..raw:sub(14)
+            if packet.SetData then packet:SetData(p) else packet.Data = p end
+        end
+    end) end
+end
+
+local function initRaknetHook()
+    if _raknetHookRegistered then return end
+    _raknet = _findRaknet()
+    if not _raknet then return end
+
+    if typeof(_raknet.add_send_hook) == "function" then
+        _raknetHookRegistered = true
+        pcall(function() _raknet.add_send_hook(_rn_send) end)
+        if typeof(_raknet.add_recv_hook) == "function" then
+            pcall(function()
+                _raknet.add_recv_hook(function(packet)
+                    if not _raknetDesyncActive then return end
+                    local id = packet.PacketId or packet.Id or packet.ID
+                    if id == 0x1B or id == 0x86 then pcall(function() packet:Drop() end) end
+                end)
+            end)
+        end
+        return
+    end
+
+    if typeof(_raknet.on_send) == "function" then
+        _raknetHookRegistered = true
+        pcall(function() _raknet.on_send(_rn_send) end)
+        if typeof(_raknet.on_recv) == "function" then
+            pcall(function()
+                _raknet.on_recv(function(packet)
+                    if not _raknetDesyncActive then return end
+                    local id = packet.PacketId or packet.Id or packet.ID
+                    if id == 0x1B or id == 0x86 then pcall(function() packet:Drop() end) end
+                end)
+            end)
+        end
+        return
+    end
+
+    -- fallback: hook genérico
+    for _, k in ipairs({"hook","hook_packet","hookpacket","add_hook"}) do
+        local fn = rawget(_raknet, k)
+        if typeof(fn) == "function" then
+            _raknetHookRegistered = true
+            pcall(function() fn(_rn_send) end)
+            return
+        end
+    end
+end
 
 local function setRaknetDesync(enabled)
     _raknetDesyncActive = enabled
     Config.RaknetDesyncEnabled = enabled
     SaveConfig()
-    pcall(function() raknet.desync(enabled) end)
-    ShowNotification("desync", enabled and "ativado" or "desativado")
+    if enabled and not _raknetHookRegistered then pcall(initRaknetHook) end
+    local status = enabled and "ATIVADO" or "DESATIVADO"
+    if enabled and not _raknetHookRegistered then status = "SEM RAKNET" end
+    ShowNotification("DESYNC", status)
 end
 
-if Config.RaknetDesyncEnabled then
-    pcall(function() raknet.desync(true) end)
-    _raknetDesyncActive = true
-end
+pcall(initRaknetHook)
+if Config.RaknetDesyncEnabled then _raknetDesyncActive = true end
 _G.setRaknetDesync = setRaknetDesync
 _G.getRaknetDesync = function() return _raknetDesyncActive end
 task.spawn(function()
@@ -13462,9 +13707,9 @@ local function tpToBestBrainrot()
     local cacheHasAnyBase = SharedState.AllAnimalsCache and #SharedState.AllAnimalsCache > 0
     local useConv = bestConv and bestConv.part and bestConv.part.Parent
                     and not cacheHasAnyBase  -- so vai pra esteira se cache de base esta vazio
-    if useConv then ShowNotification("esteira", bestConv.name or "?"); task.spawn(function() local char=LocalPlayer.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); local hum=char and char:FindFirstChild("Humanoid"); if not hrp or not hum then return end; local tool=LocalPlayer.Backpack:FindFirstChild(Config.TpSettings.Tool) or char:FindFirstChild(Config.TpSettings.Tool); if tool then hum:EquipTool(tool) end; hrp.AssemblyLinearVelocity=Vector3.new(0,280,0); RunService.Heartbeat:Wait(); hrp.CFrame=CFrame.new(bestConv.part.Position+Vector3.new(0,3,0)) end); return end
-    if bestBase then ShowNotification("tp", bestBase.name .. "  ·  " .. (bestBase.owner or "?")); SharedState.SelectedPetData={petName=bestBase.name,mpsText=bestBase.genText,mpsValue=bestBase.genValue,owner=bestBase.owner,plot=bestBase.plot,slot=bestBase.slot,uid=bestBase.uid,mutation=bestBase.mutation,animalData=bestBase}; task.spawn(runAutoSnipe)
-    else ShowNotification("tp", "nenhum encontrado") end
+    if useConv then ShowNotification("ESTEIRA", (bestConv.name or "?") .. "  ·  " .. (bestConv.gen or "")); task.spawn(function() local char=LocalPlayer.Character; local hrp=char and char:FindFirstChild("HumanoidRootPart"); local hum=char and char:FindFirstChild("Humanoid"); if not hrp or not hum then return end; local tool=LocalPlayer.Backpack:FindFirstChild(Config.TpSettings.Tool) or char:FindFirstChild(Config.TpSettings.Tool); if tool then hum:EquipTool(tool) end; hrp.AssemblyLinearVelocity=Vector3.new(0,280,0); RunService.Heartbeat:Wait(); hrp.CFrame=CFrame.new(bestConv.part.Position+Vector3.new(0,3,0)) end); return end
+    if bestBase then ShowNotification("TP", bestBase.name .. "  ·  " .. (bestBase.genText or "") .. "  ·  " .. (bestBase.owner or "?")); SharedState.SelectedPetData={petName=bestBase.name,mpsText=bestBase.genText,mpsValue=bestBase.genValue,owner=bestBase.owner,plot=bestBase.plot,slot=bestBase.slot,uid=bestBase.uid,mutation=bestBase.mutation,animalData=bestBase}; task.spawn(runAutoSnipe)
+    else ShowNotification("TP", "nenhum brainrot encontrado") end
 end
 _G.tpToBestBrainrot=tpToBestBrainrot
 
