@@ -1,5 +1,5 @@
 -- ╔══════════════════════════════════════╗
--- ║         WS HUB  •  v2.3             ║
+-- ║         WS HUB  •  v2.4             ║
 -- ║         @o_escolhido                ║
 -- ╚══════════════════════════════════════╝
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -3555,6 +3555,7 @@ task.spawn(function()
             }):Play()
             task.wait(0.35)
             alertGui:Destroy()
+            hasShownPriorityAlert = false -- reset para poder mostrar novamente
         end)
     end
     
@@ -8092,7 +8093,7 @@ task.spawn(function()
         authors.Size = UDim2.new(0, 150, 1, 0)
         authors.Position = UDim2.new(0, 122, 0, 0)
         authors.BackgroundTransparency = 1
-        authors.Text = "@o_escolhido  •  v2.3"
+        authors.Text = "@o_escolhido  •  v2.4"
         authors.Font = Enum.Font.GothamBold
         authors.TextSize = 10
         authors.TextColor3 = Theme.TextSecondary
@@ -11663,12 +11664,12 @@ if IS_MOBILE then
         local PAD      = 6
 
         local BUTTONS = {
-            { id="tp",     label="TP",      sub="carpet" },
-            { id="clone",  label="CLONE",   sub="clone"  },
-            { id="carpet", label="CARPET",  sub="speed"  },
-            { id="cfg",    label="CFG",     sub="config" },
-            { id="unlock", label="UNLOCK",  sub="unlock" },
             { id="silent", label="SILENT",  sub="hide"   },
+            { id="unlock", label="UNLOCK",  sub="unlock" },
+            { id="cfg",    label="CFG",     sub="config" },
+            { id="carpet", label="CARPET",  sub="speed"  },
+            { id="clone",  label="CLONE",   sub="clone"  },
+            { id="tp",     label="TP",      sub="carpet" },
         }
 
         local DOCK_H = PAD*2 + #BUTTONS * BTN_H + (#BUTTONS-1) * BTN_GAP
