@@ -1,0 +1,1075 @@
+-- ██╗    ██╗███████╗    ██╗  ██╗██╗   ██╗██████╗
+-- ██║    ██║██╔════╝    ██║  ██║██║   ██║██╔══██╗
+-- ██║ █╗ ██║███████╗    ███████║██║   ██║██████╔╝
+-- ██║███╗██║╚════██║    ██╔══██║██║   ██║██╔══██╗
+-- ╚███╔███╔╝███████║    ██║  ██║╚██████╔╝██████╔╝
+--  ╚══╝╚══╝ ╚══════╝    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝
+-- WS Hub v1.0 | discord.gg/wshub
+
+-- ============================================================
+-- SERVICES
+-- ============================================================
+local Players          = game:GetService("Players")
+local RunService       = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService     = game:GetService("TweenService")
+local CoreGui          = game:GetService("CoreGui")
+local ReplicatedStorage= game:GetService("ReplicatedStorage")
+
+local lp = Players.LocalPlayer
+
+-- ============================================================
+-- ANTI-KICK
+-- ============================================================
+pcall(function()
+    for _, v in pairs(getconnections(lp.Idled)) do v:Disable() end
+    game:GetService("ScriptContext").Error:Connect(function() return end)
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local old = mt.__namecall
+    mt.__namecall = newcclosure(function(self, ...)
+        local m = getnamecallmethod()
+        if m == "Kick" or m == "kick" then return nil end
+        return old(self, ...)
+    end)
+end)
+
+-- ============================================================
+-- SAFE CHARACTER WAIT
+-- ============================================================
+local function getChar()
+    return lp.Character or lp.CharacterAdded:Wait()
+end
+local function getHRP()
+    local c = getChar()
+    return c:WaitForChild("HumanoidRootPart")
+end
+local function getHum()
+    local c = getChar()
+    return c:FindFirstChildOfClass("Humanoid")
+end
+
+-- ============================================================
+-- STATE TABLE
+-- ============================================================
+local State = {
+    BatAimbot     = false,
+    HitCircle     = false,
+    AutoBat       = false,
+    FlyDefender   = false,
+    SpamBat       = false,
+    DuelsSpeed    = false,
+    SpeedBooster  = false,
+    AutoSpin      = false,
+    Float         = false,
+    Helicopter    = false,
+    AntiRagdoll   = false,
+    SafeFollow    = false,
+    Unwalk        = false,
+    RedDuel       = false,
+    BlueDuel      = false,
+}
+
+local Connections = {}
+
+-- ============================================================
+-- COLOR PALETTE
+-- ============================================================
+local C = {
+    BG       = Color3.fromRGB(10, 13, 20),
+    TabBG    = Color3.fromRGB(14, 18, 28),
+    Border   = Color3.fromRGB(0, 170, 255),
+    Active   = Color3.fromRGB(0, 170, 255),
+    Inactive = Color3.fromRGB(110, 120, 140),
+    RowBG    = Color3.fromRGB(17, 22, 34),
+    ON       = Color3.fromRGB(0, 200, 100),
+    OFF      = Color3.fromRGB(40, 45, 58),
+    Text     = Color3.fromRGB(230, 235, 255),
+}
+
+-- ============================================================
+-- GUI BUILDER
+-- ============================================================
+local function make(class, props)
+    local obj = Instance.new(class)
+    for k, v in pairs(props) do
+        if k ~= "Parent" then obj[k] = v end
+    end
+    if props.Parent then obj.Parent = props.Parent end
+    return obj
+end
+
+-- Destroy old instance if exists
+pcall(function()
+    if CoreGui:FindFirstChild("WSHub") then
+        CoreGui:FindFirstChild("WSHub"):Destroy()
+    end
+end)
+
+local ScreenGui = make("ScreenGui", {
+    Name = "WSHub",
+    ResetOnSpawn = false,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    Parent = CoreGui,
+})
+
+-- ── TOGGLE ICON ─────────────────────────────────────────────
+local ToggleIcon = make("TextButton", {
+    Size = UDim2.new(0, 48, 0, 48),
+    Position = UDim2.new(0.05, 0, 0.18, 0),
+    BackgroundColor3 = C.BG,
+    Text = "WS",
+    TextColor3 = C.Border,
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    Parent = ScreenGui,
+})
+make("UICorner",  {CornerRadius = UDim.new(0, 10), Parent = ToggleIcon})
+make("UIStroke",  {Color = C.Border, Thickness = 2,  Parent = ToggleIcon})
+
+-- ── MAIN FRAME ──────────────────────────────────────────────
+local MainFrame = make("Frame", {
+    Size = UDim2.new(0, 360, 0, 420),
+    Position = UDim2.new(0.5, -180, 0.5, -210),
+    BackgroundColor3 = C.BG,
+    BackgroundTransparency = 0.05,
+    Visible = false,
+    Active = true,
+    Parent = ScreenGui,
+})
+make("UICorner", {CornerRadius = UDim.new(0, 14), Parent = MainFrame})
+make("UIStroke", {Color = C.Border, Thickness = 2,  Parent = MainFrame})
+
+-- ── HEADER ──────────────────────────────────────────────────
+local Header = make("Frame", {
+    Size = UDim2.new(1, 0, 0, 48),
+    BackgroundTransparency = 1,
+    Parent = MainFrame,
+})
+
+make("TextLabel", {
+    Text = "⚡ WS HUB",
+    TextColor3 = C.Border,
+    Font = Enum.Font.GothamBold,
+    TextSize = 20,
+    Size = UDim2.new(0.55, 0, 1, 0),
+    Position = UDim2.new(0.04, 0, 0, 0),
+    BackgroundTransparency = 1,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    Parent = Header,
+})
+
+make("TextLabel", {
+    Text = "v1.0",
+    TextColor3 = C.Inactive,
+    Font = Enum.Font.Gotham,
+    TextSize = 11,
+    Size = UDim2.new(0.3, 0, 1, 0),
+    Position = UDim2.new(0.55, 0, 0, 0),
+    BackgroundTransparency = 1,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    Parent = Header,
+})
+
+local CloseBtn = make("TextButton", {
+    Size = UDim2.new(0, 28, 0, 28),
+    Position = UDim2.new(1, -36, 0.5, -14),
+    BackgroundColor3 = Color3.fromRGB(200, 50, 50),
+    Text = "✕",
+    TextColor3 = Color3.new(1,1,1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    Parent = Header,
+})
+make("UICorner", {CornerRadius = UDim.new(0, 6), Parent = CloseBtn})
+
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
+
+-- ── DIVIDER ─────────────────────────────────────────────────
+make("Frame", {
+    Size = UDim2.new(0.92, 0, 0, 1),
+    Position = UDim2.new(0.04, 0, 0, 48),
+    BackgroundColor3 = C.Border,
+    BackgroundTransparency = 0.6,
+    BorderSizePixel = 0,
+    Parent = MainFrame,
+})
+
+-- ── TAB BAR ─────────────────────────────────────────────────
+local TabBar = make("Frame", {
+    Size = UDim2.new(0.92, 0, 0, 32),
+    Position = UDim2.new(0.04, 0, 0, 54),
+    BackgroundColor3 = C.TabBG,
+    Parent = MainFrame,
+})
+make("UICorner",    {CornerRadius = UDim.new(0, 8),  Parent = TabBar})
+make("UIListLayout",{FillDirection = Enum.FillDirection.Horizontal,
+                     HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                     Parent = TabBar})
+
+-- ── PAGE CONTAINER ──────────────────────────────────────────
+local PageContainer = make("Frame", {
+    Size = UDim2.new(1, 0, 0, 315),
+    Position = UDim2.new(0, 0, 0, 92),
+    BackgroundTransparency = 1,
+    Parent = MainFrame,
+})
+
+local Pages      = {}
+local TabButtons = {}
+
+local function CreatePage(name)
+    local page = make("ScrollingFrame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Visible = false,
+        ScrollBarThickness = 2,
+        ScrollBarImageColor3 = C.Border,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        Parent = PageContainer,
+    })
+    make("UIListLayout", {
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        Padding = UDim.new(0, 7),
+        Parent = page,
+    })
+    make("UIPadding", {PaddingTop = UDim.new(0, 7), Parent = page})
+    Pages[name] = page
+
+    local btn = make("TextButton", {
+        Size = UDim2.new(0.24, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = C.Inactive,
+        Font = Enum.Font.GothamBold,
+        TextSize = 11,
+        Parent = TabBar,
+    })
+    btn.MouseButton1Click:Connect(function()
+        for _, p in pairs(Pages)      do p.Visible = false end
+        for _, b in pairs(TabButtons) do b.TextColor3 = C.Inactive end
+        page.Visible = true
+        btn.TextColor3 = C.Active
+    end)
+    TabButtons[name] = btn
+end
+
+-- ── TOGGLE ROW ──────────────────────────────────────────────
+local function AddToggle(pageName, label, desc, default, callback)
+    local row = make("Frame", {
+        Size = UDim2.new(0.92, 0, 0, 56),
+        BackgroundColor3 = C.RowBG,
+        BackgroundTransparency = 0.4,
+        Parent = Pages[pageName],
+    })
+    make("UICorner",  {CornerRadius = UDim.new(0, 9), Parent = row})
+    make("UIStroke",  {Color = C.Border, Thickness = 1, Transparency = 0.75, Parent = row})
+
+    make("TextLabel", {
+        Text = label,
+        Size = UDim2.new(0.63, 0, 0, 22),
+        Position = UDim2.new(0.04, 0, 0.1, 0),
+        TextColor3 = C.Text,
+        Font = Enum.Font.GothamBold,
+        TextSize = 13,
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = row,
+    })
+    make("TextLabel", {
+        Text = desc,
+        Size = UDim2.new(0.63, 0, 0, 16),
+        Position = UDim2.new(0.04, 0, 0.55, 0),
+        TextColor3 = C.Inactive,
+        Font = Enum.Font.Gotham,
+        TextSize = 10,
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = row,
+    })
+
+    local active = default or false
+
+    local tglBg = make("Frame", {
+        Size = UDim2.new(0, 44, 0, 22),
+        Position = UDim2.new(1, -52, 0.5, -11),
+        BackgroundColor3 = active and C.ON or C.OFF,
+        Parent = row,
+    })
+    make("UICorner", {CornerRadius = UDim.new(1, 0), Parent = tglBg})
+
+    local circle = make("Frame", {
+        Size = UDim2.new(0, 16, 0, 16),
+        Position = active and UDim2.new(0.55, 0, 0.1, 0) or UDim2.new(0.08, 0, 0.1, 0),
+        BackgroundColor3 = Color3.new(1, 1, 1),
+        Parent = tglBg,
+    })
+    make("UICorner", {CornerRadius = UDim.new(1, 0), Parent = circle})
+
+    local clickBtn = make("TextButton", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        Parent = row,
+    })
+    clickBtn.MouseButton1Click:Connect(function()
+        active = not active
+        TweenService:Create(tglBg, TweenInfo.new(0.2), {
+            BackgroundColor3 = active and C.ON or C.OFF
+        }):Play()
+        TweenService:Create(circle, TweenInfo.new(0.2), {
+            Position = active and UDim2.new(0.55, 0, 0.1, 0) or UDim2.new(0.08, 0, 0.1, 0)
+        }):Play()
+        callback(active)
+    end)
+end
+
+-- ============================================================
+-- CREATE PAGES
+-- ============================================================
+for _, tab in ipairs({"Combat", "Speed", "Duel", "Protect"}) do
+    CreatePage(tab)
+end
+TabButtons["Combat"].TextColor3 = C.Active
+Pages["Combat"].Visible = true
+
+-- ============================================================
+-- HELPERS
+-- ============================================================
+local function findBat()
+    local c = lp.Character
+    if not c then return nil end
+    return c:FindFirstChild("Bat")
+        or (lp.Backpack and lp.Backpack:FindFirstChild("Bat"))
+end
+
+local function getNearestEnemy()
+    local c = lp.Character
+    if not c then return nil, nil end
+    local myHRP = c:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return nil, nil end
+    local nearest, nearDist = nil, math.huge
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= lp and p.Character then
+            local eh  = p.Character:FindFirstChild("HumanoidRootPart")
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if eh and hum and hum.Health > 0 then
+                local d = (eh.Position - myHRP.Position).Magnitude
+                if d < nearDist then nearDist = d; nearest = p.Character end
+            end
+        end
+    end
+    return nearest, nearDist
+end
+
+local function cleanup(key)
+    if Connections[key] then
+        Connections[key]:Disconnect()
+        Connections[key] = nil
+    end
+end
+
+-- ============================================================
+-- 1. BAT AIMBOT  (Chiron + AutoBat hybrid)
+-- ============================================================
+local BatAimbotData = {align=nil, attach=nil}
+
+local function startBatAimbot()
+    local char = getChar()
+    local hrp  = char:WaitForChild("HumanoidRootPart")
+
+    BatAimbotData.attach = Instance.new("Attachment", hrp)
+    BatAimbotData.align  = Instance.new("AlignOrientation", hrp)
+    BatAimbotData.align.Attachment0    = BatAimbotData.attach
+    BatAimbotData.align.Mode           = Enum.OrientationAlignmentMode.OneAttachment
+    BatAimbotData.align.RigidityEnabled = true
+    BatAimbotData.align.MaxTorque      = math.huge
+    BatAimbotData.align.Enabled        = false
+
+    Connections.BatAimbot = RunService.Heartbeat:Connect(function()
+        if not State.BatAimbot then return end
+        local c  = lp.Character; if not c then return end
+        local h  = c:FindFirstChild("HumanoidRootPart"); if not h then return end
+        local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+
+        local bat = findBat()
+        if bat and bat.Parent ~= c then pcall(function() hum:EquipTool(bat) end) end
+
+        local target = getNearestEnemy()
+        if target then
+            local tHRP = target:FindFirstChild("HumanoidRootPart")
+            if tHRP then
+                hum.AutoRotate = false
+                BatAimbotData.align.Enabled = true
+                BatAimbotData.align.CFrame  = CFrame.lookAt(h.Position,
+                    Vector3.new(tHRP.Position.X, h.Position.Y, tHRP.Position.Z))
+                local dir = (tHRP.Position - h.Position)
+                local flat = Vector3.new(dir.X, 0, dir.Z)
+                if flat.Magnitude > 1.5 then
+                    h.AssemblyLinearVelocity = Vector3.new(
+                        flat.Unit.X * 55, h.AssemblyLinearVelocity.Y, flat.Unit.Z * 55)
+                end
+                local equippedBat = c:FindFirstChild("Bat") or c:FindFirstChild("Medusa")
+                if equippedBat then pcall(function() equippedBat:Activate() end) end
+            end
+        else
+            BatAimbotData.align.Enabled = false
+            hum.AutoRotate = true
+        end
+    end)
+end
+
+local function stopBatAimbot()
+    cleanup("BatAimbot")
+    if BatAimbotData.align  then BatAimbotData.align:Destroy()  BatAimbotData.align  = nil end
+    if BatAimbotData.attach then BatAimbotData.attach:Destroy() BatAimbotData.attach = nil end
+    pcall(function()
+        if lp.Character then lp.Character.Humanoid.AutoRotate = true end
+    end)
+end
+
+-- ============================================================
+-- 2. HIT CIRCLE  (Chiron)
+-- ============================================================
+local HitCircle = {conn=nil, circle=nil, align=nil, attach=nil}
+
+local function startHitCircle()
+    local char = getChar()
+    local hrp  = char:WaitForChild("HumanoidRootPart")
+
+    HitCircle.attach = Instance.new("Attachment", hrp)
+    HitCircle.align  = Instance.new("AlignOrientation", hrp)
+    HitCircle.align.Attachment0     = HitCircle.attach
+    HitCircle.align.Mode            = Enum.OrientationAlignmentMode.OneAttachment
+    HitCircle.align.RigidityEnabled = true
+
+    HitCircle.circle          = Instance.new("Part")
+    HitCircle.circle.Shape    = Enum.PartType.Cylinder
+    HitCircle.circle.Material = Enum.Material.Neon
+    HitCircle.circle.Size     = Vector3.new(0.05, 14, 14)
+    HitCircle.circle.Color    = Color3.fromRGB(0, 170, 255)
+    HitCircle.circle.CanCollide = false
+    HitCircle.circle.Massless   = true
+    HitCircle.circle.Parent     = workspace
+
+    local weld = Instance.new("Weld")
+    weld.Part0 = hrp
+    weld.Part1 = HitCircle.circle
+    weld.C0    = CFrame.new(0, -1, 0) * CFrame.Angles(0, 0, math.rad(90))
+    weld.Parent = HitCircle.circle
+
+    HitCircle.conn = RunService.RenderStepped:Connect(function()
+        if not State.HitCircle then return end
+        local c = lp.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart"); if not h then return end
+        local target, dist = nil, 7.5
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local d = (p.Character.HumanoidRootPart.Position - h.Position).Magnitude
+                if d <= dist then dist = d; target = p.Character.HumanoidRootPart end
+            end
+        end
+        if target then
+            c.Humanoid.AutoRotate = false
+            HitCircle.align.Enabled = true
+            HitCircle.align.CFrame  = CFrame.lookAt(h.Position,
+                Vector3.new(target.Position.X, h.Position.Y, target.Position.Z))
+            local t = c:FindFirstChild("Bat") or c:FindFirstChild("Medusa")
+            if t then pcall(function() t:Activate() end) end
+        else
+            HitCircle.align.Enabled = false
+            c.Humanoid.AutoRotate = true
+        end
+    end)
+end
+
+local function stopHitCircle()
+    if HitCircle.conn   then HitCircle.conn:Disconnect()   HitCircle.conn   = nil end
+    if HitCircle.circle then HitCircle.circle:Destroy()    HitCircle.circle = nil end
+    if HitCircle.align  then HitCircle.align:Destroy()     HitCircle.align  = nil end
+    if HitCircle.attach then HitCircle.attach:Destroy()    HitCircle.attach = nil end
+    pcall(function()
+        if lp.Character then lp.Character.Humanoid.AutoRotate = true end
+    end)
+end
+
+-- ============================================================
+-- 3. AUTO BAT  (Kronos)
+-- ============================================================
+local autoBatThread = nil
+
+local function startAutoBat()
+    autoBatThread = task.spawn(function()
+        while State.AutoBat do
+            local c = lp.Character
+            if c then
+                local hum = c:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    local bat = findBat()
+                    if bat then
+                        if bat.Parent == lp.Backpack then
+                            hum:EquipTool(bat)
+                            task.wait(0.1)
+                        end
+                        local eb = c:FindFirstChild("Bat")
+                        if eb then pcall(function() eb:Activate() end) end
+                    end
+                end
+            end
+            task.wait(0.15)
+        end
+    end)
+end
+
+local function stopAutoBat()
+    if autoBatThread then
+        pcall(function() task.cancel(autoBatThread) end)
+        autoBatThread = nil
+    end
+end
+
+-- ============================================================
+-- 4. FLY DEFENDER  (Kronos)
+-- ============================================================
+local flyDefBatThread = nil
+
+local function startFlyDefender()
+    flyDefBatThread = task.spawn(function()
+        while State.FlyDefender do
+            local c = lp.Character
+            if c then
+                local hum = c:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    local bat = findBat()
+                    if bat then
+                        if bat.Parent == lp.Backpack then
+                            hum:EquipTool(bat)
+                            task.wait(0.1)
+                        end
+                        local eb = c:FindFirstChild("Bat")
+                        if eb then pcall(function() eb:Activate() end) end
+                    end
+                end
+            end
+            task.wait(0.15)
+        end
+    end)
+
+    Connections.FlyDefender = RunService.Heartbeat:Connect(function()
+        if not State.FlyDefender then return end
+        local c = lp.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart"); if not h then return end
+        local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+        local target = getNearestEnemy()
+        if target then
+            local tHRP = target:FindFirstChild("HumanoidRootPart")
+            if tHRP then
+                local dir = (tHRP.Position - h.Position).Unit
+                h.AssemblyLinearVelocity = dir * 55
+                hum.PlatformStand = true
+            end
+        end
+    end)
+end
+
+local function stopFlyDefender()
+    cleanup("FlyDefender")
+    if flyDefBatThread then
+        pcall(function() task.cancel(flyDefBatThread) end)
+        flyDefBatThread = nil
+    end
+    pcall(function()
+        if lp.Character then
+            local h = lp.Character:FindFirstChild("HumanoidRootPart")
+            local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+            if h   then h.AssemblyLinearVelocity = Vector3.zero end
+            if hum then hum.PlatformStand = false end
+        end
+    end)
+end
+
+-- ============================================================
+-- 5. SPAM BAT  (Chiron)
+-- ============================================================
+local spamBatThread = nil
+
+local function startSpamBat()
+    spamBatThread = task.spawn(function()
+        while State.SpamBat do
+            local c = lp.Character
+            if c then
+                local hum = c:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    local bat = c:FindFirstChild("Bat") or (lp.Backpack and lp.Backpack:FindFirstChild("Bat"))
+                    if bat then
+                        if bat.Parent == lp.Backpack then hum:EquipTool(bat) task.wait(0.05) end
+                        local eb = c:FindFirstChild("Bat")
+                        if eb then pcall(function() eb:Activate() end) end
+                    end
+                end
+            end
+            task.wait(0.08)
+        end
+    end)
+end
+
+local function stopSpamBat()
+    if spamBatThread then
+        pcall(function() task.cancel(spamBatThread) end)
+        spamBatThread = nil
+    end
+end
+
+-- ============================================================
+-- 6. DUELS SPEED  (Kronos – 59.5)
+-- ============================================================
+local function startDuelsSpeed()
+    Connections.DuelsSpeed = RunService.Heartbeat:Connect(function()
+        if not State.DuelsSpeed then return end
+        local c = lp.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart"); if not h then return end
+        local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+        local mv = hum.MoveDirection
+        if mv.Magnitude > 0.1 then
+            local d = Vector3.new(mv.X, 0, mv.Z).Unit
+            h.AssemblyLinearVelocity = Vector3.new(d.X*59.5, h.AssemblyLinearVelocity.Y, d.Z*59.5)
+        else
+            h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0)
+        end
+    end)
+end
+local function stopDuelsSpeed()
+    cleanup("DuelsSpeed")
+    pcall(function()
+        local h = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+        if h then h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0) end
+    end)
+end
+
+-- ============================================================
+-- 7. SPEED BOOSTER  (Kronos – 29.5)
+-- ============================================================
+local function startSpeedBooster()
+    Connections.SpeedBooster = RunService.Heartbeat:Connect(function()
+        if not State.SpeedBooster then return end
+        local c = lp.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart"); if not h then return end
+        local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+        local mv = hum.MoveDirection
+        if mv.Magnitude > 0.1 then
+            local d = Vector3.new(mv.X, 0, mv.Z).Unit
+            h.AssemblyLinearVelocity = Vector3.new(d.X*29.5, h.AssemblyLinearVelocity.Y, d.Z*29.5)
+        else
+            h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0)
+        end
+    end)
+end
+local function stopSpeedBooster()
+    cleanup("SpeedBooster")
+    pcall(function()
+        local h = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+        if h then h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0) end
+    end)
+end
+
+-- ============================================================
+-- 8. AUTO SPIN  (Kronos + Spin Bot hybrid — AlignOrientation)
+-- ============================================================
+local spinAlign  = nil
+local spinAttach = nil
+local spinAngle  = 0
+
+local function startAutoSpin()
+    local c   = getChar()
+    local hrp = c:WaitForChild("HumanoidRootPart")
+    spinAttach = Instance.new("Attachment", hrp)
+    spinAlign  = Instance.new("AlignOrientation", hrp)
+    spinAlign.Attachment0     = spinAttach
+    spinAlign.Mode            = Enum.OrientationAlignmentMode.OneAttachment
+    spinAlign.Responsiveness  = 30
+    spinAlign.MaxTorque       = math.huge
+    spinAlign.RigidityEnabled = false
+    spinAlign.Enabled         = true
+    spinAngle = 0
+    Connections.AutoSpin = RunService.Heartbeat:Connect(function(dt)
+        if not State.AutoSpin then return end
+        spinAngle += 30 * dt
+        if spinAlign then
+            spinAlign.CFrame = CFrame.Angles(0, spinAngle, 0)
+        end
+    end)
+end
+
+local function stopAutoSpin()
+    cleanup("AutoSpin")
+    if spinAlign  then spinAlign:Destroy()  spinAlign  = nil end
+    if spinAttach then spinAttach:Destroy() spinAttach = nil end
+end
+
+-- ============================================================
+-- 9. FLOAT  (Chiron)
+-- ============================================================
+local floatConn = nil
+
+local function startFloat()
+    local c   = getChar()
+    local hrp = c:WaitForChild("HumanoidRootPart")
+    local targetY    = hrp.Position.Y + 10
+    local startTime  = tick()
+    local descending = false
+
+    floatConn = RunService.Heartbeat:Connect(function()
+        if not State.Float then return end
+        local c2  = lp.Character; if not c2 then return end
+        local h   = c2:FindFirstChild("HumanoidRootPart"); if not h then return end
+        local hum = c2:FindFirstChildOfClass("Humanoid")
+        local mv  = hum and hum.MoveDirection or Vector3.zero
+        if tick() - startTime >= 4 then descending = true end
+        local curY = h.Position.Y
+        local vy
+        if descending then
+            vy = -20
+            if curY <= targetY - 10 + 0.5 then
+                h.AssemblyLinearVelocity = Vector3.zero
+                State.Float = false
+                if floatConn then floatConn:Disconnect() floatConn = nil end
+                return
+            end
+        else
+            local diff = targetY - curY
+            if diff > 0.3 then       vy = math.clamp(diff * 8, 5,  50)
+            elseif diff < -0.3 then  vy = math.clamp(diff * 8, -50, -5)
+            else                     vy = 0 end
+        end
+        local vx = mv.Magnitude > 0.1 and mv.X * 30 or 0
+        local vz = mv.Magnitude > 0.1 and mv.Z * 30 or 0
+        h.AssemblyLinearVelocity = Vector3.new(vx, vy, vz)
+    end)
+end
+
+local function stopFloat()
+    if floatConn then floatConn:Disconnect() floatConn = nil end
+    pcall(function()
+        local h = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+        if h then h.AssemblyLinearVelocity = Vector3.zero end
+    end)
+end
+
+-- ============================================================
+-- 10. HELICOPTER  (Chiron)
+-- ============================================================
+local function startHelicopter()
+    Connections.Helicopter = RunService.Heartbeat:Connect(function()
+        if not State.Helicopter then return end
+        local c = lp.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart"); if not h then return end
+        local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+        hum.PlatformStand = true
+        local mv = hum.MoveDirection
+        local vx = mv.Magnitude > 0.1 and mv.X * 40 or 0
+        local vz = mv.Magnitude > 0.1 and mv.Z * 40 or 0
+        local vy = UserInputService:IsKeyDown(Enum.KeyCode.Space) and 25 or
+                   (UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and -25 or 0)
+        h.AssemblyLinearVelocity = Vector3.new(vx, vy, vz)
+    end)
+end
+
+local function stopHelicopter()
+    cleanup("Helicopter")
+    pcall(function()
+        if lp.Character then
+            local h   = lp.Character:FindFirstChild("HumanoidRootPart")
+            local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+            if h   then h.AssemblyLinearVelocity = Vector3.zero end
+            if hum then hum.PlatformStand = false end
+        end
+    end)
+end
+
+-- ============================================================
+-- 11. ANTI-RAGDOLL  (Kawatan)
+-- ============================================================
+local antiRagdollConn = nil
+
+local function startAntiRagdoll()
+    antiRagdollConn = lp.CharacterAdded:Connect(function(c)
+        local hum = c:WaitForChild("Humanoid", 5)
+        if hum then hum.AutoRotate = true end
+    end)
+    -- Hook any ragdoll remote
+    pcall(function()
+        local rs = ReplicatedStorage
+        for _, obj in ipairs(rs:GetDescendants()) do
+            if obj:IsA("RemoteEvent") and obj.Name:lower():find("ragdoll") then
+                obj.OnClientEvent:Connect(function() return end)
+            end
+        end
+    end)
+end
+
+local function stopAntiRagdoll()
+    if antiRagdollConn then antiRagdollConn:Disconnect() antiRagdollConn = nil end
+end
+
+-- ============================================================
+-- 12. SAFE FOLLOW  (Kawatan)
+-- ============================================================
+local function startSafeFollow()
+    Connections.SafeFollow = RunService.Heartbeat:Connect(function()
+        if not State.SafeFollow then return end
+        local c = lp.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart"); if not h then return end
+        local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+        local target = getNearestEnemy()
+        if not target then return end
+        local tHRP = target:FindFirstChild("HumanoidRootPart")
+        if not tHRP then return end
+        local dir  = Vector3.new(tHRP.Position.X - h.Position.X, 0, tHRP.Position.Z - h.Position.Z)
+        if dir.Magnitude > 4 then
+            hum:MoveTo(h.Position + dir.Unit * math.min(dir.Magnitude, 6))
+        end
+    end)
+end
+
+local function stopSafeFollow()
+    cleanup("SafeFollow")
+end
+
+-- ============================================================
+-- 13. UNWALK  (Chiron)
+-- ============================================================
+local savedAnimate = nil
+
+local function startUnwalk()
+    local c = lp.Character; if not c then return end
+    local hum = c:FindFirstChildOfClass("Humanoid")
+    if hum then for _, t in ipairs(hum:GetPlayingAnimationTracks()) do t:Stop() end end
+    local anim = c:FindFirstChild("Animate")
+    if anim then savedAnimate = anim:Clone() anim:Destroy() end
+end
+
+local function stopUnwalk()
+    local c = lp.Character
+    if c and savedAnimate then
+        savedAnimate:Clone().Parent = c
+        savedAnimate = nil
+    end
+end
+
+-- ============================================================
+-- 14. AUTO DUEL – RED / BLUE  (Kronos)
+-- ============================================================
+local redDuelSpots = {
+    CFrame.new(-475.51, -5.85, 25.98)  * CFrame.Angles(0, math.rad(15.95),   0),
+    CFrame.new(-488.59, -3.39, 24.23)  * CFrame.Angles(0, math.rad(81.05),   0),
+    CFrame.new(-474.57, -5.85, 26.02)  * CFrame.Angles(0, math.rad(-85.51),  0),
+    CFrame.new(-473.54, -5.39, 112.07) * CFrame.Angles(0, math.rad(-178.57), 0),
+}
+local blueDuelSpots = {
+    CFrame.new(-474.76, -5.85, 92.83)  * CFrame.Angles(0, math.rad(164.72),  0),
+    CFrame.new(-486.61, -3.39, 93.54)  * CFrame.Angles(0, math.rad(89.19),   0),
+    CFrame.new(-473.64, -5.85, 93.82)  * CFrame.Angles(0, math.rad(-36.21),  0),
+    CFrame.new(-473.25, -5.85, 17.89)  * CFrame.Angles(0, math.rad(-0.38),   0),
+}
+
+local duelConn  = nil
+local duelColor = nil
+
+local function stopDuel()
+    if duelConn then duelConn:Disconnect() duelConn = nil end
+    State.RedDuel  = false
+    State.BlueDuel = false
+    duelColor = nil
+    pcall(function()
+        local h = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+        if h then h.AssemblyLinearVelocity = Vector3.zero end
+    end)
+end
+
+local function startDuel(spots, color)
+    stopDuel()
+    duelColor = color
+    if color == "red" then State.RedDuel = true else State.BlueDuel = true end
+    local idx = 1
+    duelConn = RunService.Heartbeat:Connect(function()
+        if not State.RedDuel and not State.BlueDuel then
+            duelConn:Disconnect() duelConn = nil return
+        end
+        local c = lp.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart"); if not h then return end
+        if idx > #spots then
+            stopDuel() return
+        end
+        local target = spots[idx]
+        local dist   = (target.Position - h.Position).Magnitude
+        local spd    = idx >= 3 and 30 or 60
+        if dist <= 3 then
+            h.CFrame = target
+            h.AssemblyLinearVelocity = Vector3.zero
+            idx += 1
+        else
+            local dir = (target.Position - h.Position).Unit
+            h.AssemblyLinearVelocity = dir * spd
+        end
+    end)
+end
+
+-- ============================================================
+-- POPULATE TABS
+-- ============================================================
+
+-- ── COMBAT ──────────────────────────────────────────────────
+AddToggle("Combat", "⚡ Bat Aimbot",   "Auto aim + fly to nearest enemy", false, function(v)
+    State.BatAimbot = v
+    if v then startBatAimbot() else stopBatAimbot() end
+end)
+
+AddToggle("Combat", "🔵 Hit Circle",   "Neon ring aimbot (melee range)", false, function(v)
+    State.HitCircle = v
+    if v then startHitCircle() else stopHitCircle() end
+end)
+
+AddToggle("Combat", "🦇 Auto Bat",     "Spam equip & activate bat", false, function(v)
+    State.AutoBat = v
+    if v then startAutoBat() else stopAutoBat() end
+end)
+
+AddToggle("Combat", "🚀 Fly Defender", "Fly to closest player + auto bat", false, function(v)
+    State.FlyDefender = v
+    if v then startFlyDefender() else stopFlyDefender() end
+end)
+
+AddToggle("Combat", "💥 Spam Bat",     "Max attack speed (0.08s delay)", false, function(v)
+    State.SpamBat = v
+    if v then startSpamBat() else stopSpamBat() end
+end)
+
+-- ── SPEED ───────────────────────────────────────────────────
+AddToggle("Speed", "⚡ Duels Speed",   "Move at 59.5 studs/s", false, function(v)
+    State.DuelsSpeed = v
+    if v then startDuelsSpeed() else stopDuelsSpeed() end
+end)
+
+AddToggle("Speed", "🏃 Speed Booster",  "Move at 29.5 studs/s", false, function(v)
+    State.SpeedBooster = v
+    if v then startSpeedBooster() else stopSpeedBooster() end
+end)
+
+AddToggle("Speed", "🌪 Auto Spin",      "AlignOrientation spin loop", false, function(v)
+    State.AutoSpin = v
+    if v then startAutoSpin() else stopAutoSpin() end
+end)
+
+AddToggle("Speed", "🪂 Float",          "Float 10 studs high (key: F)", false, function(v)
+    State.Float = v
+    if v then startFloat() else stopFloat() end
+end)
+
+AddToggle("Speed", "🚁 Helicopter",     "Space=up, Shift=down while flying", false, function(v)
+    State.Helicopter = v
+    if v then startHelicopter() else stopHelicopter() end
+end)
+
+-- ── DUEL ────────────────────────────────────────────────────
+AddToggle("Duel", "🔴 Red Duel",    "Auto path to Red duel spots", false, function(v)
+    if v then
+        startDuel(redDuelSpots, "red")
+    else
+        stopDuel()
+    end
+end)
+
+AddToggle("Duel", "🔵 Blue Duel",   "Auto path to Blue duel spots", false, function(v)
+    if v then
+        startDuel(blueDuelSpots, "blue")
+    else
+        stopDuel()
+    end
+end)
+
+AddToggle("Duel", "👣 Safe Follow",  "Follows nearest enemy (pathfind)", false, function(v)
+    State.SafeFollow = v
+    if v then startSafeFollow() else stopSafeFollow() end
+end)
+
+AddToggle("Duel", "🚫 Unwalk",       "Freezes walk animation", false, function(v)
+    State.Unwalk = v
+    if v then startUnwalk() else stopUnwalk() end
+end)
+
+-- ── PROTECT ─────────────────────────────────────────────────
+AddToggle("Protect", "🛡 Anti-Ragdoll", "Blocks ragdoll remotes", false, function(v)
+    State.AntiRagdoll = v
+    if v then startAntiRagdoll() else stopAntiRagdoll() end
+end)
+
+-- ============================================================
+-- DRAGGING  (MainFrame)
+-- ============================================================
+do
+    local dragging, dragInput, dragStart, startPos
+    Header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging  = true
+            dragStart = input.Position
+            startPos  = MainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    Header.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- ============================================================
+-- TOGGLE ICON CLICK
+-- ============================================================
+ToggleIcon.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+    if MainFrame.Visible then
+        MainFrame.BackgroundTransparency = 1
+        TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+            BackgroundTransparency = 0.05
+        }):Play()
+    end
+end)
+
+-- ============================================================
+-- CHARACTER RESPAWN HANDLER
+-- ============================================================
+lp.CharacterAdded:Connect(function()
+    task.wait(1)
+    -- Restart active connections
+    if State.BatAimbot   then startBatAimbot()   end
+    if State.HitCircle   then startHitCircle()   end
+    if State.AutoBat     then startAutoBat()      end
+    if State.FlyDefender then startFlyDefender()  end
+    if State.SpamBat     then startSpamBat()      end
+    if State.DuelsSpeed  then startDuelsSpeed()   end
+    if State.SpeedBooster then startSpeedBooster() end
+    if State.AutoSpin    then startAutoSpin()     end
+    if State.Helicopter  then startHelicopter()   end
+    if State.SafeFollow  then startSafeFollow()   end
+end)
+
+-- ============================================================
+print("[WS Hub] ✅ Loaded! Click the WS icon to open.")
+print("[WS Hub] 🚀 14 features across 4 tabs | v1.0")
